@@ -61,7 +61,16 @@ export interface SeenVideoRow {
   outcome: VideoOutcome;
 }
 
-/** The columns of `pipeline_runs` this pipeline fills in. */
+/**
+ * The columns of `pipeline_runs` this pipeline fills in.
+ *
+ * `filtered` is a funnel stage, not a rejection tally: it counts the videos
+ * that *survived* the relevance filter, so the row reads found → filtered →
+ * extracted → added as a narrowing sequence. Note the deliberate clash with
+ * `VideoOutcome`, where `'filtered'` labels a video that was thrown out —
+ * there the word describes what happened to one video, here it describes how
+ * many were still standing.
+ */
 export interface RunCounts {
   found: number;
   filtered: number;
