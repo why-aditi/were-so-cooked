@@ -13,3 +13,6 @@ spikes/.env
 /test-results/
 /playwright-report/
 /e2e/.auth/
+
+# Claude Code agent worktrees and local state
+.claude/
