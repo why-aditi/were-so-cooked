@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cooked-spike4-neurons",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "ai": { "binding": "AI", "remote": true }
+  // CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN are written to .dev.vars by
+  // the runner when they are present in the environment. With them the spike
+  // reads billed neurons straight from the GraphQL analytics API; without them
+  // it falls back to measured tokens times the live published rate.
+}

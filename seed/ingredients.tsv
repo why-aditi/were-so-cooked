@@ -1,0 +1,839 @@
+# canonical_id|name|aliases|category|default_unit|shelf_days|allergens|diet_flags|confidence|review_note
+# ============================ INDIAN PRODUCE ============================
+palak|spinach|palak,paalak|produce|bunch|3|||high|
+methi_leaves|fenugreek leaves|methi,kasuri methi fresh|produce|bunch|3|||high|
+coriander_leaves|coriander leaves|dhaniya,hara dhaniya,cilantro|produce|bunch|4|||high|
+curry_leaves|curry leaves|kadi patta,karipatta|produce|bunch|7|||high|
+mint_leaves|mint|pudina|produce|bunch|5|||high|
+mustard_greens|mustard greens|sarson ka saag|produce|bunch|3|mustard||medium|Leaf of the mustard plant; the allergenic protein is in the seed, so this is flagged conservatively
+amaranth_leaves|amaranth leaves|chaulai,lal saag|produce|bunch|3|||medium|Shelf life varies with bunch freshness
+bathua|chenopodium leaves|bathua,pigweed|produce|bunch|3|||medium|Regional winter green
+dill_leaves|dill|suva,soya bhaji|produce|bunch|4|||high|
+spring_onion|spring onion|hara pyaz,scallion|produce|bunch|7||allium,root,high_fodmap|high|
+onion|onion|pyaz,pyaaz,kanda|produce|kg|30||allium,root,high_fodmap|high|
+red_onion|red onion|lal pyaz|produce|kg|30||allium,root,high_fodmap|high|
+shallot|shallot|chhota pyaz,sambar onion,madras onion|produce|piece|30||allium,root,high_fodmap|high|
+garlic|garlic|lehsun,lasan|produce|piece|60||allium,root,high_fodmap|high|
+ginger|ginger|adrak|produce|piece|21||root|high|
+green_chilli|green chilli|hari mirch,mirchi|produce|piece|10||vrat_ok|high|
+tomato|tomato|tamatar|produce|kg|7|||high|
+potato|potato|aloo,alu,batata|produce|kg|30||root,starchy,vrat_ok|high|
+sweet_potato|sweet potato|shakarkandi|produce|kg|21||root,starchy,vrat_ok|high|
+carrot|carrot|gajar|produce|kg|21||root|high|
+radish|radish|mooli|produce|piece|10||root|high|
+beetroot|beetroot|chukandar|produce|piece|21||root|high|
+turnip|turnip|shalgam|produce|piece|21||root|high|
+yam|yam|suran,jimikand,elephant foot yam|produce|piece|30||root,starchy|high|
+taro_root|taro root|arbi,arvi|produce|piece|14||root,starchy|high|
+colocasia_leaves|colocasia leaves|arbi ke patte,patra|produce|piece|4|||medium|Regional; used for patra and alu wadi
+cauliflower|cauliflower|gobhi,phool gobhi|produce|kg|10||high_fodmap|high|
+cabbage|cabbage|patta gobhi,band gobhi|produce|kg|21|||high|
+brinjal|aubergine|baingan,eggplant,vangi|produce|kg|7|||high|
+okra|okra|bhindi,lady finger|produce|kg|5|||high|
+bottle_gourd|bottle gourd|lauki,doodhi,ghiya|produce|kg|10|||high|
+ridge_gourd|ridge gourd|turai,turiya|produce|kg|7|||high|
+bitter_gourd|bitter gourd|karela|produce|kg|7|||high|
+ash_gourd|ash gourd|petha,winter melon|produce|kg|30|||high|
+snake_gourd|snake gourd|chichinda,padwal|produce|piece|7|||medium|Less common outside south and east India
+pointed_gourd|pointed gourd|parwal,parval|produce|piece|7|||medium|Seasonal, regional
+ivy_gourd|ivy gourd|tindora,kundru|produce|piece|7|||medium|Regional
+pumpkin|pumpkin|kaddu|produce|kg|30||starchy|medium|Dropped the sitaphal alias: it means custard apple in north India and pumpkin in the west
+cucumber|cucumber|kheera,khira|produce|piece|7|||high|
+capsicum|bell pepper|shimla mirch,capsicum|produce|kg|10|||high|
+french_beans|green beans|french beans,fansi|produce|kg|7|||high|
+cluster_beans|cluster beans|gawar,guar phali|produce|piece|7||legume|medium|Regional; legume flag debatable for the fresh pod
+broad_beans|broad beans|sem,fava beans|produce|piece|7||legume|high|
+flat_beans|flat beans|papdi,val papdi|produce|piece|7||legume|medium|Regional name overlaps several varieties
+green_peas|green peas|matar,hara matar|produce|kg|5||legume,starchy,high_fodmap|high|
+drumstick|drumstick|sahjan,moringa pod|produce|piece|7|||high|
+moringa_leaves|moringa leaves|sahjan patta,drumstick leaves|produce|bunch|3|||medium|Shelf life very short once picked
+raw_banana|raw banana|kacha kela|produce|piece|10||starchy|high|
+banana_stem|banana stem|thor,vazhaithandu|produce|piece|5|||medium|Regional, south and east India
+lotus_stem|lotus stem|kamal kakdi,bhein,renkon,lotus root|produce|piece|10||root|medium|Sold fresh and canned; shelf life differs
+jackfruit_raw|raw jackfruit|kathal|produce|piece|7||starchy|high|
+mushroom_button|button mushroom|khumbi,mushroom|produce|piece|5||high_fodmap|high|
+corn_sweet|sweet corn|bhutta,makai|produce|piece|5||grain,starchy|high|
+# ============================ FRUIT ============================
+mango|mango|aam|produce|piece|7||high_fodmap,vrat_ok|high|
+banana|banana|kela|produce|piece|5||vrat_ok|high|
+apple|apple|seb|produce|piece|30||high_fodmap,vrat_ok|high|
+papaya|papaya|papita|produce|piece|5||vrat_ok|high|
+guava|guava|amrood|produce|piece|7||vrat_ok|high|
+pomegranate|pomegranate|anar|produce|piece|21||vrat_ok|high|
+lemon|lemon|nimbu|produce|piece|21||vrat_ok|high|
+lime|lime|kagzi nimbu|produce|piece|14||vrat_ok|high|
+orange|orange|santra|produce|piece|14||vrat_ok|high|
+sweet_lime|sweet lime|mosambi|produce|piece|14||vrat_ok|medium|Regional citrus, shelf life approximate
+grapes|grapes|angoor|produce|piece|7||high_fodmap,vrat_ok|high|
+watermelon|watermelon|tarbooz|produce|piece|10||high_fodmap,vrat_ok|high|
+muskmelon|muskmelon|kharbooja|produce|piece|7||vrat_ok|high|
+custard_apple|custard apple|sitaphal,sharifa|produce|piece|4||vrat_ok|medium|Ripens fast; shelf life approximate
+chikoo|sapodilla|chikoo,sapota|produce|piece|5||vrat_ok|medium|Regional
+jamun|java plum|jamun,black plum|produce|piece|3||vrat_ok|medium|Very short season and shelf life
+litchi|lychee|litchi,lichi|produce|piece|5||high_fodmap,vrat_ok|high|
+pineapple|pineapple|ananas|produce|piece|7||vrat_ok|high|
+coconut_fresh|fresh coconut|nariyal|produce|piece|14||vrat_ok|high|
+coconut_tender|tender coconut|nariyal pani,green coconut|produce|piece|7||vrat_ok|high|
+dates_fresh|fresh dates|khajoor|produce|piece|14||high_fodmap,vrat_ok|high|
+fig_fresh|fresh fig|anjeer|produce|piece|5||high_fodmap,vrat_ok|high|
+pear|pear|nashpati|produce|piece|14||high_fodmap,vrat_ok|high|
+peach|peach|aadu|produce|piece|7||high_fodmap,vrat_ok|high|
+plum|plum|aloo bukhara|produce|piece|7||high_fodmap,vrat_ok|high|
+strawberry|strawberry|strawberry|produce|piece|4||vrat_ok|high|
+avocado|avocado|butter fruit|produce|piece|7||high_fodmap|high|
+tamarind|tamarind|imli|produce|piece|365||high_fodmap|high|
+raw_mango|raw mango|kacha aam,kairi|produce|piece|10||vrat_ok|high|
+amla|indian gooseberry|amla,nellikai|produce|piece|14||vrat_ok|high|
+# ============================ DALS, LEGUMES, PULSES ============================
+toor_dal|split pigeon peas|toor dal,arhar dal,tuvar dal|legumes|kg|365||legume,high_fodmap|high|
+moong_dal|split mung beans|moong dal,mung dal|legumes|kg|365||legume,high_fodmap|high|
+moong_whole|whole mung beans|sabut moong,green gram|legumes|kg|365||legume,high_fodmap|high|
+masoor_dal|red lentils|masoor dal,lal masoor|legumes|kg|365||legume,high_fodmap|high|
+masoor_whole|brown lentils|sabut masoor|legumes|kg|365||legume,high_fodmap|high|
+chana_dal|split bengal gram|chana dal|legumes|kg|365||legume,high_fodmap|high|
+kala_chana|black chickpeas|kala chana,desi chana|legumes|kg|365||legume,high_fodmap|high|
+kabuli_chana|chickpeas|kabuli chana,chhole,garbanzo beans|legumes|kg|365||legume,high_fodmap|high|
+urad_dal|split black gram|urad dal,dhuli urad|legumes|kg|365||legume,high_fodmap|high|
+urad_whole|whole black gram|sabut urad,kali dal|legumes|kg|365||legume,high_fodmap|high|
+rajma|kidney beans|rajma,red kidney beans|legumes|kg|365||legume,high_fodmap|high|
+lobia|black eyed peas|lobia,chawli,rongi|legumes|kg|365||legume,high_fodmap|high|
+moth_beans|moth beans|matki,moth|legumes|kg|365||legume,high_fodmap|medium|Regional, mostly west India
+horse_gram|horse gram|kulthi,hurali|legumes|kg|365||legume|medium|Regional, mostly south India
+soybean|soybean|soya bean|legumes|kg|365|soy|legume|high|
+green_peas_dried|dried green peas|sukha matar|legumes|kg|365||legume,high_fodmap|high|
+white_peas|white peas|safed matar,ragda|legumes|kg|365||legume,high_fodmap|high|
+lentil_puy|puy lentils|french green lentils|legumes|kg|365||legume,high_fodmap|high|
+lentil_beluga|beluga lentils|black lentils|legumes|kg|365||legume,high_fodmap|medium|Speciality item
+butter_beans|butter beans|lima beans|legumes|kg|365||legume,high_fodmap|high|
+cannellini_beans|cannellini beans|white kidney beans|legumes|kg|365||legume,high_fodmap|high|
+borlotti_beans|borlotti beans|cranberry beans|legumes|kg|365||legume,high_fodmap|high|
+black_beans|black beans|turtle beans|legumes|kg|365||legume,high_fodmap|high|
+pinto_beans|pinto beans|pinto|legumes|kg|365||legume,high_fodmap|high|
+adzuki_beans|adzuki beans|red beans|legumes|kg|365||legume,high_fodmap|high|
+mung_bean_sprouts|mung bean sprouts|bean sprouts,ankurit moong|produce|piece|3||legume|high|
+lupin_flour|lupin flour|lupine flour|legumes|kg|180|lupin|legume|high|
+peanut|peanut|moongphali,groundnut|legumes|kg|180|peanuts|nut,legume,vrat_ok|high|
+# ============================ GRAINS AND FLOURS ============================
+rice_basmati|basmati rice|basmati chawal,rice,chawal|grains|kg|730||grain|high|
+rice_sona_masoori|sona masoori rice|sona masoori|grains|kg|730||grain|high|
+rice_brown|brown rice|brown chawal|grains|kg|180||grain|high|
+rice_parboiled|parboiled rice|ukda chawal,sella rice|grains|kg|730||grain|high|
+poha|flattened rice|poha,chivda,aval|grains|kg|180||grain|high|
+puffed_rice|puffed rice|murmura,kurmura|grains|kg|90||grain|high|
+samak_rice|barnyard millet|samak chawal,sama,vrat ke chawal|grains|kg|180||grain,vrat_ok|high|
+wheat_flour|wholewheat flour|atta,gehun ka atta|grains|kg|90|gluten|grain,gluten,high_fodmap|high|
+maida|refined wheat flour|maida,all purpose flour,plain flour|grains|kg|180|gluten|grain,gluten,high_fodmap|high|
+sooji|semolina|sooji,rava,suji|grains|kg|180|gluten|grain,gluten,high_fodmap|high|
+dalia|broken wheat|dalia,lapsi|grains|kg|180|gluten|grain,gluten,high_fodmap|high|
+besan|gram flour|besan,chickpea flour,garbanzo flour|grains|kg|180||legume,high_fodmap|high|
+rice_flour|rice flour|chawal ka atta|grains|kg|180||grain|high|
+kuttu_flour|buckwheat flour|kuttu ka atta,buckwheat|grains|kg|90||grain,vrat_ok|high|
+singhara_flour|water chestnut flour|singhare ka atta|grains|kg|90||grain,vrat_ok|high|
+rajgira_flour|amaranth flour|rajgira atta,ramdana|grains|kg|90||grain,vrat_ok|high|
+jowar_flour|sorghum flour|jowar atta|grains|kg|90||grain|high|
+bajra_flour|pearl millet flour|bajra atta|grains|kg|60||grain|high|
+ragi_flour|finger millet flour|ragi atta,nachni|grains|kg|90||grain|high|
+makki_flour|cornmeal|makki ka atta,corn flour coarse|grains|kg|90||grain|high|
+cornstarch|cornflour|corn starch,makai starch|grains|kg|730||grain,starchy|high|
+sabudana|tapioca pearls|sabudana,sago,javvarisi|grains|kg|365||starchy,vrat_ok|high|
+oats|oats|jai,rolled oats|grains|kg|180||grain|medium|Often cross-contaminated with wheat; certified GF oats are a separate product
+barley|barley|jau|grains|kg|365|gluten|grain,gluten|high|
+rye_flour|rye flour|rye|grains|kg|180|gluten|grain,gluten|high|
+spelt_flour|spelt flour|spelt|grains|kg|180|gluten|grain,gluten|high|
+semolina_durum|durum semolina|pasta flour|grains|kg|365|gluten|grain,gluten|high|
+quinoa|quinoa|quinoa|grains|kg|365||grain|high|
+couscous|couscous|couscous|grains|kg|365|gluten|grain,gluten|high|
+bulgur|bulgur wheat|bulgur|grains|kg|365|gluten|grain,gluten|high|
+farro|farro|emmer|grains|kg|365|gluten|grain,gluten|medium|Speciality Italian grain
+polenta|polenta|cornmeal coarse|grains|kg|365||grain,starchy|high|
+rice_arborio|arborio rice|risotto rice|grains|kg|730||grain,starchy|high|
+rice_sushi|sushi rice|shari,japanese short grain|grains|kg|730||grain,starchy|high|
+rice_jasmine|jasmine rice|thai fragrant rice|grains|kg|730||grain|high|
+rice_glutinous|glutinous rice|sticky rice,mochigome|grains|kg|730||grain,starchy|high|
+rice_noodles|rice noodles|rice stick,pho noodles|grains|kg|365||grain|high|
+soba_noodles|soba noodles|soba,chukwa soba|grains|kg|365|gluten|grain,gluten|medium|Ordinary soba is 20 to 80 percent wheat. Use soba_juwari for the 100 percent buckwheat kind
+soba_juwari|juwari soba|ten wari soba,100 percent buckwheat soba|grains|kg|365|||medium|Juwari means 100 percent buckwheat and contains no wheat; verify the label
+udon_noodles|udon noodles|udon|grains|kg|180|gluten|grain,gluten|high|
+ramen_noodles|ramen noodles|chukamen|grains|kg|180|gluten|grain,gluten|medium|Some contain egg; brand dependent
+egg_noodles|egg noodles|hakka noodles|grains|kg|180|gluten,egg|grain,gluten,egg|high|
+vermicelli|vermicelli|seviyan,semiya|grains|kg|180|gluten|grain,gluten|medium|Rice vermicelli is a different product with no gluten
+pasta_dry|dried pasta|spaghetti,penne,fusilli|grains|kg|730|gluten|grain,gluten|high|
+pasta_egg|fresh egg pasta|tagliatelle fresh|grains|kg|4|gluten,egg|grain,gluten,egg|high|
+# ============================ SPICES AND SEEDS ============================
+turmeric|turmeric|haldi,haldi powder|spices|g|365|||high|
+red_chilli_powder|red chilli powder|lal mirch powder,mirchi powder|spices|g|365|||high|
+kashmiri_chilli|kashmiri chilli powder|kashmiri lal mirch|spices|g|365|||high|
+coriander_powder|coriander powder|dhaniya powder|spices|g|365|||high|
+cumin_seed|cumin seeds|jeera,zeera|spices|g|365||vrat_ok|high|
+cumin_powder|cumin powder|jeera powder|spices|g|365||vrat_ok|high|
+mustard_seed|mustard seeds|rai|spices|g|365|mustard||high|
+black_mustard_seed|black mustard seeds|kali rai|spices|g|365|mustard||high|
+fenugreek_seed|fenugreek seeds|methi dana|spices|g|365|||high|
+fennel_seed|fennel seeds|saunf|spices|g|365||high_fodmap|high|
+carom_seed|carom seeds|ajwain,ajowan|spices|g|365||vrat_ok|high|
+nigella_seed|nigella seeds|kalonji,black seed|spices|g|365|||high|
+black_pepper|black pepper|kali mirch|spices|g|730||vrat_ok|high|
+white_pepper|white pepper|safed mirch|spices|g|730|||high|
+green_cardamom|green cardamom|elaichi,choti elaichi|spices|g|365||vrat_ok|high|
+black_cardamom|black cardamom|badi elaichi,kali elaichi|spices|g|365|||high|
+cinnamon|cinnamon|dalchini|spices|g|730||vrat_ok|high|
+clove|cloves|laung|spices|g|730||vrat_ok|high|
+bay_leaf|bay leaf|tej patta|spices|g|365|||high|
+star_anise|star anise|chakra phool|spices|g|730|||high|
+mace|mace|javitri|spices|g|365|||high|
+nutmeg|nutmeg|jaiphal|spices|g|730|||high|
+asafoetida|asafoetida compounded|hing,heeng,compounded hing|spices|g|365|gluten|gluten|medium|Indian commercial hing is cut with wheat flour. Use asafoetida_gf for the rice-flour or pure kind
+asafoetida_gf|gluten free asafoetida|hing gluten free,pure hing,rice flour hing|spices|g|365|||medium|Sold cut with rice flour or pure; verify the label says gluten free
+dried_red_chilli|dried red chilli|sookhi lal mirch,sabut lal mirch|spices|g|365|||high|
+kashmiri_dried_chilli|kashmiri dried chilli|kashmiri sabut mirch|spices|g|365|||high|
+tamarind_paste|tamarind paste|imli paste|condiments|packet|180||high_fodmap|high|
+dry_mango_powder|dry mango powder|amchur,amchoor|spices|g|365||vrat_ok|high|
+pomegranate_seed_powder|pomegranate seed powder|anardana|spices|g|365|||medium|Regional north Indian souring agent
+kokum|kokum|kokam|spices|g|365|||medium|Regional west coast souring agent
+rock_salt|rock salt|sendha namak,himalayan salt|spices|g|730||vrat_ok|high|
+black_salt|black salt|kala namak|spices|g|730||vrat_ok|high|
+table_salt|salt|namak,sea salt|spices|g|730|||high|
+saffron|saffron|kesar,zafran|spices|g|730||vrat_ok|high|
+poppy_seed|poppy seeds|khus khus,posto|spices|g|180|||high|
+sesame_seed|sesame seeds|til|spices|g|180|sesame||high|
+white_sesame|white sesame seeds|safed til|spices|g|180|sesame||high|
+black_sesame|black sesame seeds|kala til|spices|g|180|sesame||high|
+dried_fenugreek_leaves|dried fenugreek leaves|kasuri methi|spices|g|365|||high|
+dried_mint|dried mint|pudina powder|spices|g|365|||high|
+# ---- composite masalas: blends, so allergens depend on the recipe ----
+garam_masala|garam masala|garam masala powder|spices|g|180|||medium|Blend varies by household and brand; some add nuts or sesame
+chaat_masala|chaat masala|chat masala|spices|g|180|||medium|Usually contains asafoetida, which is commonly wheat-compounded
+sambar_powder|sambar powder|sambar masala|spices|g|180||legume|medium|Contains roasted dals; some brands add asafoetida
+rasam_powder|rasam powder|rasam masala|spices|g|180||legume|medium|Contains roasted dals and often asafoetida
+pav_bhaji_masala|pav bhaji masala|pav bhaji powder|spices|g|180|||medium|Blend, brand dependent
+chole_masala|chole masala|chana masala powder|spices|g|180|||medium|Usually contains asafoetida and dried pomegranate
+biryani_masala|biryani masala|biryani powder|spices|g|180|||medium|Blend, brand dependent
+tandoori_masala|tandoori masala|tandoori powder|spices|g|180|||low|Many commercial blends contain milk solids for colour and body
+kitchen_king_masala|kitchen king masala|kitchen king|spices|g|180|||low|Commercial blend, composition undisclosed and variable
+curry_powder|curry powder|madras curry powder|spices|g|180|||medium|Western blend, no fixed recipe
+panch_phoron|panch phoron|bengali five spice|spices|g|365|mustard||high|
+goda_masala|goda masala|kala masala|spices|g|180|sesame||medium|Maharashtrian blend, usually contains sesame and coconut
+chinese_five_spice|chinese five spice|five spice powder|spices|g|365|||high|
+za_atar|zaatar|zatar,zahtar|spices|g|180|sesame||high|
+ras_el_hanout|ras el hanout|ras al hanout|spices|g|365|||medium|North African blend, recipe varies widely
+baharat|baharat|middle eastern spice mix|spices|g|365|||medium|Blend, varies by region
+berbere|berbere|ethiopian spice mix|spices|g|365|||medium|Blend, varies by producer
+harissa_paste|harissa paste|harissa|condiments|packet|90||high_fodmap|medium|Usually contains garlic; some brands add caraway or rose
+dukkah|dukkah|duqqa|spices|g|90|tree_nuts,sesame||high|
+italian_herbs|mixed italian herbs|italian seasoning|spices|g|365|||high|
+herbes_de_provence|herbes de provence|provence herbs|spices|g|365|||high|
+oregano_dried|dried oregano|oregano|spices|g|365|||high|
+thyme_dried|dried thyme|thyme|spices|g|365|||high|
+rosemary_dried|dried rosemary|rosemary|spices|g|365|||high|
+basil_dried|dried basil|basil|spices|g|365|||high|
+paprika|paprika|sweet paprika|spices|g|365|||high|
+smoked_paprika|smoked paprika|pimenton|spices|g|365|||high|
+cayenne|cayenne pepper|cayenne|spices|g|365|||high|
+sumac|sumac|sumaq|spices|g|365|||high|
+caraway_seed|caraway seeds|shahi jeera,caraway|spices|g|365|||medium|Often confused with black cumin in Indian recipes
+juniper_berry|juniper berries|juniper|spices|g|365|||high|
+vanilla_extract|vanilla extract|vanilla essence|condiments|packet|730||alcohol|medium|Real extract is alcohol based; imitation essence usually is not
+# ============================ DAIRY AND EGGS ============================
+milk|milk|doodh,dudh|dairy|l|5|milk|dairy|high|
+full_fat_milk|full fat milk|whole milk,full cream milk|dairy|l|5|milk|dairy|high|
+skimmed_milk|skimmed milk|toned milk|dairy|l|5|milk|dairy|high|
+buttermilk|buttermilk|chaas,chhaach,mattha|dairy|l|4|milk|dairy|high|
+yoghurt|yoghurt|dahi,curd,yogurt|dairy|g|7|milk|dairy|high|
+hung_curd|hung curd|chakka|dairy|g|5|milk|dairy|high|
+paneer|paneer|panir,cottage cheese indian|dairy|g|3|milk|dairy|high|
+khoa|khoa|mawa,khoya|dairy|g|5|milk|dairy|high|
+chhena|chhena|chena|dairy|g|2|milk|dairy|high|
+malai|malai|milk cream top,malai cream|dairy|g|3|milk|dairy|medium|The cream skimmed from boiled milk; similar to clotted cream but not the same product
+fresh_cream|fresh cream|cream,single cream|dairy|g|7|milk|dairy|high|
+double_cream|double cream|heavy cream,whipping cream|dairy|g|7|milk|dairy|high|
+sour_cream|sour cream|smetana|dairy|g|14|milk|dairy|high|
+creme_fraiche|creme fraiche|cultured cream|dairy|g|14|milk|dairy|high|
+butter|butter|makkhan,unsalted butter|dairy|g|30|milk|dairy|high|
+salted_butter|salted butter|salted makkhan|dairy|g|30|milk|dairy|high|
+ghee|ghee|clarified butter,desi ghee|dairy|g|180|milk|dairy|high|
+condensed_milk|condensed milk|milkmaid,sweetened condensed milk|dairy|g|365|milk|dairy,refined_sugar|high|
+evaporated_milk|evaporated milk|unsweetened condensed milk|dairy|g|365|milk|dairy|high|
+milk_powder|milk powder|doodh powder,dried milk|dairy|g|365|milk|dairy|high|
+cheddar|cheddar cheese|cheddar|dairy|g|30|milk|dairy|high|
+mozzarella|mozzarella|pizza cheese|dairy|g|14|milk|dairy|high|
+parmesan|parmesan|parmigiano reggiano|dairy|g|90|milk|dairy,animal_derived|low|Traditional parmesan uses animal rennet, so it is not vegetarian; vegetarian versions exist
+pecorino|pecorino romano|pecorino|dairy|g|90|milk|dairy,animal_derived|low|Traditionally animal rennet
+feta|feta|greek cheese|dairy|g|30|milk|dairy|medium|Rennet source varies by producer
+halloumi|halloumi|grilling cheese|dairy|g|30|milk|dairy|high|
+ricotta|ricotta|ricotta cheese|dairy|g|7|milk|dairy|high|
+mascarpone|mascarpone|italian cream cheese|dairy|g|14|milk|dairy|high|
+cream_cheese|cream cheese|philadelphia|dairy|g|21|milk|dairy|high|
+processed_cheese|processed cheese|cheese slice,amul cheese|dairy|g|60|milk|dairy|medium|Some brands include animal rennet or emulsifiers of animal origin
+blue_cheese|blue cheese|gorgonzola,roquefort|dairy|g|21|milk|dairy,animal_derived|medium|Many blues use animal rennet
+brie|brie|camembert|dairy|g|21|milk|dairy,animal_derived|medium|Rennet source varies
+gruyere|gruyere|swiss cheese|dairy|g|60|milk|dairy,animal_derived|medium|Traditionally animal rennet
+egg|egg|anda,hen egg|other|piece|21|egg|egg|high|
+egg_white|egg white|anda safedi,albumen|other|packet|3|egg|egg|high|
+egg_yolk|egg yolk|anda zarda|other|packet|2|egg|egg|high|
+duck_egg|duck egg|batakh anda|other|piece|21|egg|egg|high|
+quail_egg|quail egg|bater anda|other|piece|14|egg|egg|high|
+# ---- non dairy milks, which are neither dairy nor allergen free ----
+soy_milk|soy milk|soya milk|beverages|l|7|soy|legume|high|
+almond_milk|almond milk|badam milk plant|beverages|l|7|tree_nuts|nut|high|
+cashew_milk|cashew milk|kaju milk|beverages|l|7|tree_nuts|nut|high|
+oat_milk|oat milk|oat drink|beverages|l|7||grain|medium|Not certified gluten-free unless labelled; oats are often cross-contaminated
+coconut_milk|coconut milk|nariyal doodh|condiments|packet|365|||high|
+coconut_cream|coconut cream|thick coconut milk|condiments|packet|365|||high|
+rice_milk|rice milk|rice drink|beverages|l|7||grain|high|
+# ============================ MEAT, POULTRY, SEAFOOD ============================
+chicken|chicken|murgh,murgi|meat|g|2||meat,poultry|high|
+chicken_breast|chicken breast|boneless chicken|meat|g|2||meat,poultry|high|
+chicken_thigh|chicken thigh|chicken leg|meat|g|2||meat,poultry|high|
+mutton|mutton|goat meat,bakra|meat|g|3||meat|high|
+lamb|lamb|lamb meat|meat|g|3||meat|high|
+beef|beef|gai ka gosht|meat|g|3||meat,beef|high|
+veal|veal|calf meat|meat|g|3||meat,beef|high|
+pork|pork|suar ka gosht|meat|g|3||meat,pork|high|
+bacon|bacon|streaky bacon|meat|g|14||meat,pork|medium|Cured; some cures contain sulphites
+ham|ham|gammon|meat|g|14||meat,pork|medium|Cured; some contain sulphites
+sausage_pork|pork sausage|banger,breakfast sausage|meat|g|5|gluten|meat,pork,gluten|medium|British style sausage is bound with rusk. Use sausage_pork_gf for the gluten free kind
+sausage_pork_gf|gluten free pork sausage|gf sausage|meat|g|5||meat,pork|medium|Bound with rice flour or nothing; verify the label
+chorizo|chorizo|spanish sausage|meat|g|30||meat,pork|medium|Some contain sulphites
+salami|salami|cured sausage|meat|g|30||meat,pork|medium|Varies by producer
+pepperoni|pepperoni|pepperoni sausage|meat|g|30||meat,pork,beef|medium|Usually pork and beef blend
+prosciutto|prosciutto|parma ham|meat|g|30||meat,pork|high|
+duck|duck|batakh|meat|g|2||meat,poultry|high|
+turkey|turkey|turkey meat|meat|g|2||meat,poultry|high|
+rabbit|rabbit|khargosh|meat|g|3||meat|high|
+gelatin|gelatin|gelatine|other|packet|730||animal_derived|high|
+lard|lard|pork fat|other|packet|180||animal_derived,pork|high|
+fish_stock|fish stock|fish bouillon|condiments|packet|7|fish|fish|high|
+rohu|rohu|rui,rohu fish|seafood|g|2|fish|fish|high|
+katla|catla|katla fish|seafood|g|2|fish|fish|medium|Regional Bengali and eastern fish
+pomfret|pomfret|paplet,pamphret|seafood|g|2|fish|fish|high|
+mackerel|mackerel|bangda|seafood|g|2|fish|fish|high|
+sardine|sardine|tarli|seafood|g|2|fish|fish|high|
+salmon|salmon|salmon fish|seafood|g|2|fish|fish|high|
+tuna|tuna|tuna fish|seafood|g|2|fish|fish|high|
+cod|cod|cod fish|seafood|g|2|fish|fish|high|
+tilapia|tilapia|tilapia fish|seafood|g|2|fish|fish|high|
+anchovy|anchovy|anchovies|seafood|g|2|fish|fish|high|
+prawn|prawn|jhinga,shrimp|seafood|g|2|crustaceans|shellfish|high|
+crab|crab|kekda|seafood|g|2|crustaceans|shellfish|high|
+lobster|lobster|lobster|seafood|g|2|crustaceans|shellfish|high|
+squid|squid|calamari|seafood|g|2|molluscs|shellfish|high|
+octopus|octopus|octopus|seafood|g|2|molluscs|shellfish|high|
+mussel|mussel|mussels|seafood|g|2|molluscs|shellfish|high|
+clam|clam|tisrya,clams|seafood|g|2|molluscs|shellfish|high|
+oyster|oyster|oysters|seafood|g|2|molluscs|shellfish|high|
+scallop|scallop|scallops|seafood|g|2|molluscs|shellfish|high|
+dried_shrimp|dried shrimp|sukat,dried prawn|seafood|g|180|crustaceans|shellfish|high|
+bombay_duck|bombay duck|bombil|seafood|g|180|fish|fish|medium|Usually sold dried
+# ======== COMPOSITE CONDIMENTS: allergens are hidden inside the product ========
+soy_sauce|soy sauce|soya sauce,shoyu|condiments|packet|730|soy,gluten|gluten|high|
+dark_soy_sauce|dark soy sauce|dark soya sauce|condiments|packet|730|soy,gluten|gluten|high|
+light_soy_sauce|light soy sauce|light soya sauce|condiments|packet|730|soy,gluten|gluten|high|
+tamari|tamari|gluten free soy sauce|condiments|packet|730|soy||medium|Usually wheat-free but not always; check the label
+fish_sauce|fish sauce|nam pla,nuoc mam,patis|condiments|packet|730|fish|fish|high|
+oyster_sauce|oyster sauce|oyster flavoured sauce|condiments|packet|365|molluscs|shellfish|high|
+worcestershire_sauce|worcestershire sauce|worcester sauce|condiments|packet|730|fish|fish|high|
+hoisin_sauce|hoisin sauce|hoisin|condiments|packet|365|soy,gluten,sesame|gluten|low|Recipes vary; many contain sesame and some contain shellfish
+teriyaki_sauce|teriyaki sauce|teriyaki|condiments|packet|365|soy,gluten|gluten,refined_sugar|high|
+ponzu|ponzu|ponzu sauce|condiments|packet|365|soy,gluten,fish|gluten,fish|low|Traditional ponzu contains bonito; a vegan version exists
+miso_white|white miso|shiro miso|condiments|packet|365|soy|legume|medium|Some miso is made with barley and then contains gluten
+miso_red|red miso|aka miso|condiments|packet|365|soy|legume|medium|Barley miso exists and contains gluten
+mirin|mirin|sweet rice wine|condiments|packet|365||alcohol,refined_sugar|high|
+sake|sake|rice wine|beverages|packet|365||alcohol,grain|high|
+shaoxing_wine|shaoxing wine|chinese cooking wine|condiments|packet|730||alcohol,grain|high|
+rice_vinegar|rice vinegar|rice wine vinegar|condiments|packet|730||grain|high|
+black_vinegar|chinkiang vinegar|chinese black vinegar|condiments|packet|730|gluten|gluten|medium|Usually made from glutinous rice and wheat bran
+gochujang|gochujang|korean chilli paste|condiments|packet|365|soy,gluten|gluten,legume,refined_sugar|medium|Most contain wheat; gluten-free versions exist
+doubanjiang|doubanjiang|broad bean chilli paste|condiments|packet|365|soy,gluten|legume,gluten|medium|Usually contains wheat flour
+sriracha|sriracha|sriracha sauce|condiments|packet|365||allium,high_fodmap,refined_sugar|high|
+sambal_oelek|sambal oelek|sambal|condiments|packet|365|||medium|Some sambals contain shrimp paste
+shrimp_paste|shrimp paste|belacan,terasi,kapi|condiments|packet|365|crustaceans|shellfish|high|
+xo_sauce|xo sauce|xo|condiments|packet|180|crustaceans,molluscs,fish|shellfish,fish|low|Made from dried scallop and shrimp; formulations vary
+peanut_butter|peanut butter|moongphali butter|condiments|packet|180|peanuts|nut,legume|high|
+tahini|tahini|sesame paste,til paste|condiments|packet|365|sesame||high|
+hummus|hummus|houmous|condiments|packet|7|sesame|legume,allium,high_fodmap|high|
+baba_ganoush|baba ganoush|mutabbal|condiments|packet|5|sesame|allium|high|
+pesto_genovese|basil pesto|pesto|condiments|packet|14|tree_nuts,milk|dairy,allium,animal_derived|low|Contains pine nuts and parmesan; parmesan usually has animal rennet
+pesto_rosso|red pesto|sun dried tomato pesto|condiments|packet|14|tree_nuts,milk|dairy,allium|medium|Nut and cheese content varies by brand
+mayonnaise|mayonnaise|mayo|condiments|packet|60|egg,mustard|egg|high|
+eggless_mayonnaise|eggless mayonnaise|vegan mayo|condiments|packet|60|mustard||medium|Some use soy protein; check label
+aioli|aioli|garlic mayonnaise|condiments|packet|14|egg,mustard|egg,allium,high_fodmap|high|
+tartar_sauce|tartar sauce|tartare sauce|condiments|packet|60|egg,mustard|egg|high|
+ranch_dressing|ranch dressing|ranch|condiments|packet|60|egg,milk|dairy,egg,allium|high|
+caesar_dressing|caesar dressing|caesar|condiments|packet|30|egg,fish,milk|egg,fish,dairy,allium|low|Contains anchovy and parmesan; many people do not know it is not vegetarian
+thousand_island|thousand island dressing|thousand island|condiments|packet|60|egg|egg,refined_sugar|high|
+ketchup|tomato ketchup|tomato sauce bottled|condiments|packet|365||refined_sugar|high|
+brown_sauce|brown sauce|hp sauce|condiments|packet|365|gluten|gluten,refined_sugar|medium|Malt vinegar base means gluten
+mustard_dijon|dijon mustard|dijon|condiments|packet|365|mustard||high|
+mustard_english|english mustard|hot mustard|condiments|packet|365|mustard||high|
+wholegrain_mustard|wholegrain mustard|grain mustard|condiments|packet|365|mustard||high|
+horseradish_sauce|horseradish sauce|horseradish|condiments|packet|180|milk,mustard|dairy|medium|Creamed versions contain dairy; plain grated does not
+wasabi_paste|wasabi paste imitation|wasabi,western wasabi|condiments|packet|365|mustard||medium|Almost all tube wasabi is horseradish, mustard and colouring. Use wasabi_real for the genuine rhizome
+wasabi_real|fresh wasabi|hon wasabi,wasabia japonica,real wasabi|condiments|packet|14|||medium|Genuine wasabi rhizome, no mustard; rare and expensive outside Japan. The bare word wasabi deliberately resolves to the imitation
+malt_vinegar|malt vinegar|malt sirka|condiments|packet|730|gluten|gluten|high|
+balsamic_vinegar|balsamic vinegar|aceto balsamico|condiments|packet|730|sulphites|refined_sugar|medium|Sulphites present in many bottlings; sulphites is an allergen not a flag
+white_wine_vinegar|white wine vinegar|wine vinegar|condiments|packet|730|sulphites||high|
+red_wine_vinegar|red wine vinegar|red vinegar|condiments|packet|730|sulphites||high|
+apple_cider_vinegar|apple cider vinegar|acv,cider vinegar|condiments|packet|730|sulphites||medium|Unfiltered versions may be sulphite-free
+white_vinegar|white vinegar|distilled vinegar,sirka|condiments|packet|730|||high|
+stock_cube_chicken|chicken stock cube|chicken bouillon|condiments|packet|365|celery|meat,poultry|low|Most contain celery and yeast extract; some contain gluten
+stock_cube_vegetable|vegetable stock cube|veg bouillon|condiments|packet|365|celery||low|Celery is near-universal in stock cubes; gluten varies by brand
+stock_cube_beef|beef stock cube|beef bouillon|condiments|packet|365|celery|meat,beef|low|Celery near-universal; gluten varies
+yeast_extract|yeast extract|marmite,vegemite|condiments|packet|730|gluten|gluten|medium|Barley derived; gluten content disputed but flagged conservatively
+curry_paste_thai_red|thai red curry paste|red curry paste|condiments|packet|180|crustaceans|shellfish,allium,high_fodmap|low|Most authentic pastes contain shrimp paste; vegan versions exist
+curry_paste_thai_green|thai green curry paste|green curry paste|condiments|packet|180|crustaceans|shellfish,allium,high_fodmap|low|Most contain shrimp paste; vegan versions exist
+curry_paste_massaman|massaman curry paste|massaman paste|condiments|packet|180|crustaceans,peanuts|shellfish,nut,allium|low|Often contains both shrimp paste and peanut
+laksa_paste|laksa paste|laksa|condiments|packet|180|crustaceans,tree_nuts|shellfish,allium|low|Usually contains shrimp paste and candlenut
+tom_yum_paste|tom yum paste|tom yum|condiments|packet|180|crustaceans,fish|shellfish,fish,allium|low|Usually contains shrimp paste and fish sauce
+ginger_garlic_paste|ginger garlic paste|adrak lehsun paste|condiments|packet|30||allium,root,high_fodmap|high|
+tomato_puree|tomato puree|tomato paste|condiments|packet|365|||high|
+coconut_chutney|coconut chutney|nariyal chutney|condiments|packet|2||legume|medium|Usually tempered with chana dal and urad dal
+mint_chutney|mint chutney|pudina chutney,hari chutney|condiments|packet|5||allium,high_fodmap|medium|Recipes vary; some add peanut or curd
+tamarind_chutney|tamarind chutney|imli chutney,meethi chutney|condiments|packet|14||refined_sugar,high_fodmap|high|
+mango_pickle|mango pickle|aam ka achar|condiments|packet|365|mustard||high|
+lime_pickle|lime pickle|nimbu ka achar|condiments|packet|365|mustard||high|
+mixed_pickle|mixed pickle|mixed achar|condiments|packet|365|mustard||high|
+# ============================ BREADS AND BAKERY ============================
+roti|roti|chapati,phulka|bakery|piece|2|gluten|grain,gluten|high|
+naan|naan|naan bread|bakery|piece|3|gluten,milk|grain,gluten,dairy|high|
+butter_naan|butter naan|butter naan bread|bakery|piece|2|gluten,milk|grain,gluten,dairy|high|
+garlic_naan|garlic naan|lehsuni naan|bakery|piece|2|gluten,milk|grain,gluten,dairy,allium|high|
+tandoori_roti|tandoori roti|tandoori bread|bakery|piece|2|gluten|grain,gluten|high|
+paratha|paratha|parantha|bakery|piece|2|gluten|grain,gluten|high|
+aloo_paratha|aloo paratha|potato paratha|bakery|piece|2|gluten|grain,gluten,root,starchy|high|
+lachha_paratha|lachha paratha|laccha paratha|bakery|piece|2|gluten|grain,gluten|high|
+puri|puri|poori|bakery|piece|1|gluten|grain,gluten|high|
+bhatura|bhatura|bhature|bakery|piece|1|gluten|grain,gluten|medium|Often leavened with yoghurt, so may contain dairy
+kulcha|kulcha|kulcha bread|bakery|piece|2|gluten,milk|grain,gluten,dairy|medium|Dairy content varies by recipe
+pav|pav|ladi pav,bread roll|bakery|piece|3|gluten|grain,gluten|medium|Some commercial pav contains milk solids
+bread_white|white bread|sliced bread,double roti|bakery|piece|5|gluten|grain,gluten|medium|Many commercial loaves contain milk or soy
+bread_wholemeal|wholemeal bread|brown bread,atta bread|bakery|piece|5|gluten|grain,gluten|medium|Composition varies by brand
+sourdough|sourdough bread|sourdough|bakery|piece|5|gluten|grain,gluten|high|
+baguette|baguette|french bread|bakery|piece|2|gluten|grain,gluten|high|
+ciabatta|ciabatta|italian bread|bakery|piece|3|gluten|grain,gluten|high|
+focaccia|focaccia|focaccia bread|bakery|piece|3|gluten|grain,gluten|high|
+brioche|brioche|brioche bun|bakery|piece|4|gluten,egg,milk|grain,gluten,egg,dairy|high|
+croissant|croissant|butter croissant|bakery|piece|2|gluten,milk|grain,gluten,dairy|high|
+pita|pita bread|pitta,khubz|bakery|piece|5|gluten|grain,gluten|high|
+lavash|lavash|lavash bread|bakery|piece|14|gluten|grain,gluten|high|
+tortilla_wheat|wheat tortilla|flour tortilla|bakery|piece|14|gluten|grain,gluten|high|
+tortilla_corn|corn tortilla|maize tortilla|bakery|piece|14||grain|high|
+bagel|bagel|bagels|bakery|piece|3|gluten|grain,gluten|medium|Some contain egg or malt
+pretzel|pretzel|soft pretzel|bakery|piece|3|gluten|grain,gluten|high|
+breadcrumbs|breadcrumbs|bread crumb|bakery|piece|180|gluten|grain,gluten|high|
+panko|panko|japanese breadcrumbs|bakery|piece|180|gluten|grain,gluten|high|
+puff_pastry|puff pastry|flaky pastry|frozen|packet|180|gluten|grain,gluten|low|Butter versions contain dairy; many commercial ones use vegetable fat
+filo_pastry|filo pastry|phyllo|frozen|packet|180|gluten|grain,gluten|high|
+shortcrust_pastry|shortcrust pastry|pie crust|frozen|packet|180|gluten,milk|grain,gluten,dairy|medium|Fat source varies; some use vegetable shortening
+pizza_base|pizza base|pizza dough|bakery|piece|5|gluten|grain,gluten|high|
+crackers|crackers|cream crackers|bakery|piece|180|gluten|grain,gluten|medium|Some contain milk or sesame
+rusk|rusk|toast,suji rusk|bakery|piece|180|gluten|grain,gluten|medium|Some contain milk
+papad|papad|papadum,appalam|other|packet|365||legume|medium|Usually urad dal; some contain asafoetida
+# ============================ SWEETS AND DESSERTS ============================
+sugar|sugar|cheeni,shakkar|sweets|g|730||refined_sugar|high|
+jaggery|jaggery|gud,gur|sweets|g|365||refined_sugar|high|
+brown_sugar|brown sugar|demerara|sweets|g|730||refined_sugar|high|
+icing_sugar|icing sugar|powdered sugar,confectioners sugar|sweets|g|730||refined_sugar,starchy|high|
+honey|honey|shahad|sweets|g|730||honey,high_fodmap|high|
+maple_syrup|maple syrup|maple|sweets|g|365||refined_sugar|high|
+golden_syrup|golden syrup|light treacle|sweets|g|730||refined_sugar|high|
+molasses|molasses|black treacle|sweets|g|730||refined_sugar|high|
+gulab_jamun|gulab jamun|gulabjamun|sweets|g|5|milk,gluten|dairy,gluten,refined_sugar|high|
+rasgulla|rasgulla|rosogolla|sweets|g|5|milk|dairy,refined_sugar|high|
+rasmalai|rasmalai|ras malai|sweets|g|3|milk,tree_nuts|dairy,nut,refined_sugar|high|
+barfi|barfi|burfi|sweets|g|7|milk|dairy,refined_sugar|medium|Nut varieties are common; check the specific sweet
+kaju_katli|kaju katli|cashew barfi|sweets|g|14|tree_nuts|nut,refined_sugar|high|
+laddu_besan|besan laddu|besan ladoo|sweets|g|14|milk|legume,dairy,refined_sugar|high|
+laddu_motichoor|motichoor laddu|motichur ladoo|sweets|g|7|milk|legume,dairy,refined_sugar|high|
+jalebi|jalebi|jilebi|sweets|g|2|gluten|grain,gluten,refined_sugar|medium|Some recipes ferment with curd
+halwa_gajar|gajar halwa|carrot halwa|sweets|g|5|milk,tree_nuts|dairy,nut,root,refined_sugar|high|
+halwa_sooji|sooji halwa|rava sheera|sweets|g|3|gluten,milk|grain,gluten,dairy,refined_sugar|high|
+kheer|kheer|rice pudding indian|sweets|g|3|milk,tree_nuts|dairy,nut,grain,refined_sugar|high|
+shrikhand|shrikhand|shreekhand|sweets|g|5|milk,tree_nuts|dairy,nut,refined_sugar|high|
+peda|peda|doodh peda|sweets|g|10|milk|dairy,refined_sugar|high|
+soan_papdi|soan papdi|patisa|sweets|g|30|milk,gluten,tree_nuts|dairy,gluten,nut,refined_sugar|medium|Recipes vary; most contain besan and ghee
+mysore_pak|mysore pak|mysorepak|sweets|g|14|milk|legume,dairy,refined_sugar|high|
+chocolate_dark|dark chocolate|plain chocolate|sweets|g|365||refined_sugar|medium|Most contain soy lecithin and may carry milk traces
+chocolate_milk|milk chocolate|milk chocolate bar|sweets|g|365|milk,soy|dairy,refined_sugar|high|
+chocolate_white|white chocolate|white chocolate bar|sweets|g|365|milk,soy|dairy,refined_sugar|high|
+cocoa_powder|cocoa powder|unsweetened cocoa|sweets|g|730|||high|
+custard_powder|custard powder|custard|sweets|g|365||starchy,refined_sugar|medium|Usually cornflour based; serve with milk
+ice_cream_vanilla|vanilla ice cream|vanilla icecream|frozen|packet|180|milk,egg|dairy,egg,refined_sugar|medium|Egg content depends on style
+kulfi|kulfi|kulfi ice cream|frozen|packet|180|milk,tree_nuts|dairy,nut,refined_sugar|high|
+marshmallow|marshmallow|marshmallows|sweets|g|365||animal_derived,refined_sugar|high|
+# ============================ EAST ASIAN ============================
+tofu_firm|firm tofu|tofu,extra firm tofu|other|packet|7|soy|legume|high|
+tofu_silken|silken tofu|soft tofu|other|packet|7|soy|legume|high|
+tofu_fried|fried tofu puffs|aburaage,tau pok|other|packet|14|soy|legume|high|
+tempeh|tempeh|tempe|other|packet|10|soy|legume|high|
+edamame|edamame|green soybeans|produce|piece|5|soy|legume|high|
+soya_chaap|soya chaap|soy chaap|other|packet|7|soy,gluten|legume,gluten|medium|Chaap is soy protein wrapped around a wheat gluten core
+seitan|seitan|wheat gluten,mock duck|other|packet|10|gluten|gluten|high|
+textured_soy|soy chunks|soya chunks,nutrela,tvp|other|packet|365|soy|legume|high|
+bok_choy|pak choi|bok choy,chinese cabbage|produce|piece|7|||high|
+napa_cabbage|napa cabbage|chinese leaf,wombok|produce|piece|14|||high|
+gai_lan|chinese broccoli|gai lan,kai lan|produce|piece|7|||high|
+water_chestnut|water chestnut|singhara,matai|produce|piece|14||starchy,vrat_ok|high|
+bamboo_shoot|bamboo shoots|bamboo|produce|piece|7|||high|
+daikon|daikon|mooli white,japanese radish|produce|piece|14||root|high|
+shiitake|shiitake mushroom|shiitake|produce|piece|7||high_fodmap|high|
+enoki|enoki mushroom|enokitake|produce|piece|5||high_fodmap|high|
+king_oyster_mushroom|king oyster mushroom|eryngii|produce|piece|7||high_fodmap|high|
+wood_ear|wood ear fungus|black fungus,kikurage|produce|piece|365|||high|
+nori|nori|seaweed sheets,laver|other|packet|365|||high|
+wakame|wakame|seaweed|other|packet|365|||high|
+kombu|kombu|kelp,dashi kombu|other|packet|730|||high|
+dashi_powder|dashi powder|bonito stock powder|condiments|packet|365|fish|fish|high|
+katsuobushi|bonito flakes|katsuobushi,dried bonito|other|packet|365|fish|fish|high|
+mentaiko|pollock roe|mentaiko,tarako|seafood|g|5|fish|fish|medium|Often contains sulphites and MSG
+sesame_oil|toasted sesame oil|til ka tel,gingelly oil|other|packet|365|sesame||high|
+chilli_oil|chilli oil|la you,lao gan ma|condiments|packet|365|||medium|Some contain soy, peanut or shrimp
+sichuan_pepper|sichuan pepper|szechuan pepper|spices|g|730|||high|
+star_anise_whole|whole star anise|badiyan|spices|g|730|||high|
+dried_shiitake|dried shiitake|dried mushroom|other|packet|365||high_fodmap|high|
+goji_berry|goji berries|wolfberry|other|packet|365|||high|
+chinese_sausage|chinese sausage|lap cheong|meat|g|90||meat,pork,refined_sugar|medium|Usually pork; some contain soy and alcohol
+century_egg|century egg|pidan,preserved egg|other|piece|90|egg|egg|high|
+salted_duck_egg|salted duck egg|salted egg|other|piece|30|egg|egg|high|
+kimchi|kimchi|kimchee|other|packet|60|fish,crustaceans|allium,high_fodmap,fish,shellfish|low|Traditional kimchi contains fish sauce and salted shrimp; vegan kimchi exists
+gochugaru|gochugaru|korean chilli flakes|spices|g|365|||high|
+doenjang|doenjang|korean soybean paste|condiments|packet|365|soy|legume|medium|Some contain wheat
+ssamjang|ssamjang|korean dipping paste|condiments|packet|365|soy,gluten,sesame|legume,gluten,allium|medium|Blend of doenjang and gochujang
+japchae_noodles|sweet potato noodles|dangmyeon,korean sweet potato noodles|grains|kg|365||starchy|high|
+mung_bean_noodles|mung bean vermicelli|glass noodles,cellophane noodles|grains|kg|365||legume,starchy|high|
+# ============================ SOUTHEAST ASIAN ============================
+lemongrass|lemongrass|sereh,takrai|produce|bunch|14|||high|
+galangal|galangal|kha,lengkuas|produce|piece|21||root|high|
+kaffir_lime_leaf|makrut lime leaves|kaffir lime leaves|produce|piece|14|||high|
+thai_basil|thai basil|horapha|produce|bunch|5|||high|
+holy_basil|holy basil|krapao,tulsi|produce|bunch|5|||high|
+bird_eye_chilli|birds eye chilli|thai chilli,prik kee noo|produce|piece|10|||high|
+pandan_leaf|pandan leaf|screwpine leaf|produce|bunch|7|||high|
+banana_leaf|banana leaf|kela patta|other|bunch|7|||high|
+palm_sugar|palm sugar|gula melaka,jaggery palm|sweets|g|365||refined_sugar|high|
+coconut_sugar|coconut sugar|coconut palm sugar|sweets|g|365||refined_sugar|high|
+tamarind_pulp|tamarind pulp|asam jawa|condiments|packet|365||high_fodmap|high|
+candlenut|candlenut|kemiri,buah keras|other|packet|180|tree_nuts|nut|high|
+kecap_manis|sweet soy sauce|kecap manis|condiments|packet|365|soy,gluten|gluten,refined_sugar|high|
+rice_paper|rice paper|banh trang|grains|kg|365||grain|high|
+vietnamese_mint|vietnamese mint|rau ram|produce|bunch|5|||medium|Regional herb
+coriander_root|coriander root|rak pak chee|produce|bunch|7|||medium|Sold with the bunch in SE Asian markets
+green_papaya|green papaya|raw papaya|produce|piece|7|||high|
+long_bean|long beans|yardlong bean,snake bean|produce|piece|5||legume|high|
+pea_aubergine|pea aubergine|makhua puang|produce|piece|7|||medium|Regional Thai ingredient
+morning_glory|water spinach|kangkung,morning glory|produce|piece|3|||high|
+# ============================ MIDDLE EASTERN AND NORTH AFRICAN ============================
+freekeh|freekeh|green wheat|grains|kg|365|gluten|grain,gluten|high|
+pomegranate_molasses|pomegranate molasses|dibs rumman|condiments|packet|730||refined_sugar|high|
+rose_water|rose water|gulab jal|condiments|packet|730|||high|
+orange_blossom_water|orange blossom water|mazaher|condiments|packet|730|||high|
+preserved_lemon|preserved lemon|salted lemon|condiments|packet|365|||high|
+harissa_rose|rose harissa|rose harissa paste|condiments|packet|90||allium,high_fodmap|medium|Contains garlic and rose petals; brand dependent
+labneh|labneh|strained yoghurt|dairy|g|10|milk|dairy|high|
+kashk|kashk|dried whey|dairy|g|180|milk|dairy|medium|Regional Persian ingredient
+halva_tahini|tahini halva|halwa tahini|sweets|g|180|sesame|refined_sugar|high|
+pistachio|pistachio|pista|other|packet|180|tree_nuts|nut|high|
+pine_nut|pine nuts|chilgoza,pignoli|other|packet|90|tree_nuts|nut|high|
+sumac_ground|ground sumac|sumac powder|spices|g|365|||high|
+dried_lime|dried lime|loomi,black lime|spices|g|730|||medium|Persian and Gulf ingredient
+bulgur_fine|fine bulgur|kibbeh bulgur|grains|kg|365|gluten|grain,gluten|high|
+vine_leaves|vine leaves|grape leaves,dolma leaves|other|packet|365|||high|
+falafel_mix|falafel mix|falafel powder|other|packet|365||legume,allium,high_fodmap|medium|Some mixes contain wheat flour as a binder
+tahini_dark|dark tahini|roasted sesame paste|condiments|packet|365|sesame||high|
+za_atar_blend|zaatar blend|zaatar mix|spices|g|180|sesame||high|
+# ============================ EUROPEAN PRODUCE AND HERBS ============================
+lettuce_iceberg|iceberg lettuce|iceberg|produce|piece|7|||high|
+lettuce_romaine|romaine lettuce|cos lettuce|produce|piece|7|||high|
+rocket|rocket|arugula|produce|bunch|4|||high|
+watercress|watercress|watercress|produce|bunch|4|||high|
+kale|kale|curly kale|produce|piece|7|||high|
+swiss_chard|swiss chard|chard|produce|piece|5|||high|
+brussels_sprout|brussels sprouts|sprouts|produce|piece|14||high_fodmap|high|
+broccoli|broccoli|hari gobhi|produce|piece|7||high_fodmap|high|
+asparagus|asparagus|asparagus spears|produce|piece|5||high_fodmap|high|
+artichoke|globe artichoke|artichoke|produce|piece|7||high_fodmap|high|
+leek|leek|leeks|produce|piece|14||allium,high_fodmap|high|
+celery|celery|celery sticks|produce|piece|14|celery|high_fodmap|high|
+celeriac|celeriac|celery root|produce|piece|21|celery|root|high|
+fennel_bulb|fennel bulb|florence fennel|produce|piece|10||high_fodmap|high|
+parsnip|parsnip|parsnips|produce|piece|21||root,starchy|high|
+swede|swede|rutabaga|produce|piece|30||root|high|
+courgette|courgette|zucchini|produce|piece|7|||high|
+aubergine_italian|italian aubergine|globe eggplant|produce|piece|7|||high|
+tomato_cherry|cherry tomato|cherry tomatoes|produce|piece|7|||high|
+tomato_plum|plum tomato|roma tomato|produce|piece|7|||high|
+sundried_tomato|sun dried tomato|sundried tomatoes|condiments|packet|365|sulphites||medium|Often preserved with sulphites; oil-packed versions vary
+red_pepper|red pepper|red bell pepper|produce|piece|10|||high|
+yellow_pepper|yellow pepper|yellow bell pepper|produce|piece|10|||high|
+chilli_jalapeno|jalapeno|jalapeno pepper|produce|piece|10|||high|
+chilli_habanero|habanero|scotch bonnet|produce|piece|10|||high|
+parsley|parsley|flat leaf parsley|produce|bunch|5|||high|
+basil_fresh|fresh basil|sweet basil|produce|bunch|4|||high|
+thyme_fresh|fresh thyme|thyme sprigs|produce|piece|10|||high|
+rosemary_fresh|fresh rosemary|rosemary sprigs|produce|piece|14|||high|
+sage_fresh|fresh sage|sage leaves|produce|piece|7|||high|
+tarragon|tarragon|french tarragon|produce|piece|7|||high|
+chives|chives|chive|produce|bunch|7||allium|high|
+marjoram|marjoram|sweet marjoram|produce|piece|7|||high|
+horseradish_root|horseradish root|fresh horseradish|produce|piece|21||root|high|
+truffle_black|black truffle|truffle|produce|piece|7|||medium|Highly perishable; shelf life approximate
+olive_green|green olives|olives|condiments|packet|365|sulphites||medium|Brine composition varies; some contain sulphites
+olive_black|black olives|kalamata olives|condiments|packet|365|sulphites||medium|Some are dyed and sulphited
+caper|capers|caperberries|condiments|packet|365|||high|
+gherkin|gherkin|pickled cucumber|condiments|packet|365|mustard||medium|Many pickling liquors contain mustard seed
+sauerkraut|sauerkraut|fermented cabbage|condiments|packet|180|||high|
+# ============================ EUROPEAN PANTRY ============================
+olive_oil|olive oil|jaitun ka tel|other|l|540|||high|
+extra_virgin_olive_oil|extra virgin olive oil|evoo|other|l|540|||high|
+sunflower_oil|sunflower oil|surajmukhi tel|other|l|365|||high|
+rapeseed_oil|rapeseed oil|canola oil|other|l|365|||high|
+groundnut_oil|groundnut oil|peanut oil,moongphali tel|other|l|365|peanuts|nut|high|
+mustard_oil|mustard oil|sarson ka tel|other|l|365|mustard||high|
+coconut_oil|coconut oil|nariyal tel|other|l|540|||high|
+sesame_oil_light|light sesame oil|til oil light|other|l|365|sesame||high|
+rice_bran_oil|rice bran oil|rice bran|other|l|365||grain|high|
+vegetable_oil|vegetable oil|refined oil|other|l|365|||medium|Blend, usually soy or palm; soy allergen possible
+palm_oil|palm oil|red palm oil|other|l|365|||high|
+margarine|margarine|margarine spread|other|packet|180|milk|dairy|low|Some margarine contains milk solids and some does not; brand dependent
+shortening|vegetable shortening|baking fat|other|packet|365|||medium|Some contain dairy
+suet|suet|beef suet|other|packet|180||animal_derived,beef|medium|Vegetable suet is a separate product
+stock_chicken|chicken stock|chicken broth|condiments|packet|5|celery|meat,poultry|medium|Homemade has no celery; commercial usually does
+stock_vegetable|vegetable stock|veg broth|condiments|packet|5|celery||medium|Commercial versions almost always contain celery
+stock_beef|beef stock|beef broth|condiments|packet|5|celery|meat,beef|medium|Commercial versions usually contain celery
+gelatine_sheet|gelatine leaves|leaf gelatine|other|packet|730||animal_derived|high|
+agar_agar|agar agar|china grass,kanten|other|packet|730|||high|
+baking_powder|baking powder|baking powder|other|packet|365||starchy|high|
+baking_soda|bicarbonate of soda|meetha soda,baking soda|other|packet|730|||high|
+yeast_dried|dried yeast|active dry yeast|other|packet|365|||high|
+yeast_fresh|fresh yeast|compressed yeast|other|packet|14|||high|
+cream_of_tartar|cream of tartar|tartaric acid|other|packet|730|||high|
+gelatin_free_setting|pectin|fruit pectin|other|packet|730|||high|
+# ============================ AMERICAN AND LATIN ============================
+corn_tortilla_chips|tortilla chips|nachos|other|packet|180||grain,starchy|medium|Some are fried in shared oil with wheat products
+black_bean_canned|canned black beans|black beans tinned|legumes|kg|730||legume,high_fodmap|high|
+refried_beans|refried beans|frijoles refritos|legumes|kg|730||legume,high_fodmap|low|Traditional versions are made with lard
+salsa_verde|salsa verde|tomatillo salsa|condiments|packet|180||allium,high_fodmap|high|
+salsa_roja|salsa roja|red salsa|condiments|packet|180||allium,high_fodmap|high|
+chipotle_in_adobo|chipotle in adobo|chipotle peppers|condiments|packet|365||allium,refined_sugar|high|
+tomatillo|tomatillo|husk tomato|produce|piece|14|||high|
+jicama|jicama|yam bean|produce|piece|21||root,starchy|medium|Uncommon outside the Americas
+plantain|plantain|cooking banana|produce|piece|10||starchy|high|
+cornbread_mix|cornbread mix|corn muffin mix|grains|kg|365|gluten,milk|grain,gluten,dairy|medium|Most mixes contain wheat and milk powder
+maple_bacon|maple bacon|candied bacon|meat|g|14||meat,pork,refined_sugar|medium|Cured; sulphites possible
+buttermilk_ranch|buttermilk ranch|ranch seasoning|condiments|packet|365|milk|dairy,allium|high|
+bbq_sauce|barbecue sauce|bbq sauce|condiments|packet|365||refined_sugar,allium|medium|Some contain Worcestershire and therefore fish
+hot_sauce_louisiana|louisiana hot sauce|tabasco|condiments|packet|730|||high|
+grits|grits|hominy grits|grains|kg|365||grain,starchy|high|
+pumpkin_puree|pumpkin puree|canned pumpkin|condiments|packet|730||starchy|high|
+cranberry_dried|dried cranberries|craisins|other|packet|365||refined_sugar|high|
+pecan|pecan|pecan nuts|other|packet|180|tree_nuts|nut|high|
+maple_butter|maple butter|maple cream|sweets|g|180||refined_sugar|medium|Usually dairy-free despite the name; verify brand
+# ============================ NUTS, SEEDS, DRIED FRUIT ============================
+almond|almond|badam|other|packet|180|tree_nuts|nut,vrat_ok|high|
+cashew|cashew|kaju|other|packet|180|tree_nuts|nut,vrat_ok|high|
+cashew_cream|cashew cream|kaju cream,cashew paste|condiments|packet|3|tree_nuts|nut|high|
+walnut|walnut|akhrot|other|packet|180|tree_nuts|nut,vrat_ok|high|
+hazelnut|hazelnut|filbert|other|packet|180|tree_nuts|nut|high|
+brazil_nut|brazil nut|brazil nuts|other|packet|180|tree_nuts|nut|high|
+macadamia|macadamia|macadamia nuts|other|packet|180|tree_nuts|nut|high|
+chestnut|chestnut|singhada chestnut|other|packet|30|tree_nuts|nut,starchy|medium|Botanically distinct from other tree nuts but labelled as one
+charoli|charoli|chironji|other|packet|180|tree_nuts|nut|medium|Indian nut, allergen classification uncertain
+sunflower_seed|sunflower seeds|surajmukhi beej|other|packet|180|||high|
+pumpkin_seed|pumpkin seeds|pepitas|other|packet|180|||high|
+flaxseed|flaxseed|alsi,linseed|other|packet|180|||high|
+chia_seed|chia seeds|chia|other|packet|365|||high|
+hemp_seed|hemp seeds|hemp hearts|other|packet|180|||high|
+melon_seed|melon seeds|magaz,char magaz|other|packet|180|||medium|Indian thickener; sometimes blended with nuts
+raisin|raisins|kishmish|other|packet|365||high_fodmap,vrat_ok|high|
+golden_raisin|golden raisins|sultana,munakka|other|packet|365|sulphites|high_fodmap,vrat_ok|medium|Usually sulphited to keep colour
+date_dried|dried dates|chhuara,khajur|other|packet|365||high_fodmap,vrat_ok|high|
+apricot_dried|dried apricots|khubani|other|packet|365|sulphites|high_fodmap,vrat_ok|medium|Bright orange apricots are sulphited; dark ones usually are not
+fig_dried|dried figs|anjeer sukha|other|packet|365||high_fodmap,vrat_ok|high|
+prune|prunes|dried plums|other|packet|365||high_fodmap|high|
+desiccated_coconut|desiccated coconut|nariyal bura|other|packet|180||vrat_ok|high|
+coconut_dried|copra|sukha nariyal,khopra|other|packet|180||vrat_ok|high|
+peanut_roasted|roasted peanuts|bhuni moongphali|other|packet|180|peanuts|nut,legume,vrat_ok|high|
+mixed_nuts|mixed nuts|dry fruits|other|packet|180|tree_nuts,peanuts|nut|high|
+marzipan|marzipan|almond paste|sweets|g|180|tree_nuts|nut,refined_sugar|high|
+nutella|chocolate hazelnut spread|nutella|sweets|g|365|tree_nuts,milk,soy|nut,dairy,refined_sugar|high|
+praline|praline|nut brittle|sweets|g|180|tree_nuts|nut,refined_sugar|high|
+# ============================ BEVERAGES ============================
+tea_black|black tea|chai patti,assam tea|beverages|packet|730|||high|
+tea_green|green tea|hari chai|beverages|packet|730|||high|
+tea_masala|masala chai blend|masala tea|beverages|packet|365|||medium|Blends sometimes contain milk powder
+coffee_ground|ground coffee|coffee|beverages|packet|180|||high|
+coffee_instant|instant coffee|nescafe|beverages|packet|730|||high|
+filter_coffee|filter coffee powder|south indian filter coffee|beverages|packet|180||legume|medium|Usually blended with chicory
+cocoa_drink|drinking chocolate|bournvita,horlicks|beverages|packet|365|milk,gluten|dairy,gluten,refined_sugar|low|Malted drinks contain barley and milk solids; formulations vary
+coconut_water|coconut water|nariyal pani packaged|beverages|l|180||vrat_ok|high|
+lemonade|lemonade|nimbu pani|beverages|l|7||refined_sugar|high|
+cola|cola|soft drink|beverages|l|365||refined_sugar|high|
+beer|beer|lager,ale|beverages|l|180|gluten|alcohol,grain,gluten|high|
+wine_red|red wine|red wine|beverages|packet|730|sulphites|alcohol|high|
+wine_white|white wine|white wine|beverages|packet|730|sulphites|alcohol|high|
+rum|rum|dark rum|beverages|packet|1825||alcohol|high|
+whisky|whisky|whiskey,scotch|beverages|packet|1825|gluten|alcohol,grain,gluten|medium|Distillation removes most gluten protein and many coeliac bodies consider it safe; flagged closed anyway
+vodka|vodka|vodka|beverages|packet|1825||alcohol|medium|Usually grain based; distilled so gluten is generally absent
+brandy|brandy|cognac|beverages|packet|1825|sulphites|alcohol|high|
+sherry|sherry|cooking sherry|beverages|packet|365|sulphites|alcohol|high|
+vermouth|vermouth|dry vermouth|beverages|packet|180|sulphites|alcohol|high|
+# ============================ ITALIAN, FRENCH, SPANISH, GREEK ============================
+arborio_risotto|risotto rice arborio|carnaroli|grains|kg|730||grain,starchy|high|
+lasagne_sheets|lasagne sheets|lasagna|grains|kg|730|gluten|grain,gluten|high|
+gnocchi|gnocchi|potato gnocchi|grains|kg|14|gluten|grain,gluten,starchy,root|medium|Most contain wheat flour; some are gluten-free
+polenta_instant|instant polenta|quick polenta|grains|kg|365||grain,starchy|high|
+passata|passata|sieved tomatoes|condiments|packet|365|||high|
+anchovy_fillet|anchovy fillets|salted anchovies|seafood|g|365|fish|fish|high|
+nduja|nduja|spreadable salami|meat|g|60||meat,pork|medium|Regional Calabrian product
+pancetta|pancetta|italian bacon|meat|g|21||meat,pork|high|
+guanciale|guanciale|cured pork cheek|meat|g|30||meat,pork|high|
+mortadella|mortadella|bologna|meat|g|21|tree_nuts|meat,pork,nut|medium|Pistachio versions are common; plain versions have no nuts
+truffle_oil|truffle oil|white truffle oil|other|packet|365|||medium|Usually synthetic aroma rather than real truffle
+saffron_spanish|spanish saffron|azafran|spices|g|730|||high|
+paella_rice|paella rice|bomba rice|grains|kg|730||grain,starchy|high|
+manchego|manchego|spanish sheep cheese|dairy|g|60|milk|dairy,animal_derived|medium|Traditionally animal rennet
+jamon_serrano|serrano ham|jamon|meat|g|60||meat,pork|high|
+piquillo_pepper|piquillo peppers|roasted red peppers|condiments|packet|365|||high|
+sherry_vinegar|sherry vinegar|vinagre de jerez|condiments|packet|730|sulphites||high|
+greek_yoghurt|greek yoghurt|greek yogurt|dairy|g|14|milk|dairy|high|
+tzatziki|tzatziki|cucumber yoghurt dip|condiments|packet|5|milk|dairy,allium|high|
+taramasalata|taramasalata|cod roe dip|condiments|packet|7|fish,gluten|fish,gluten|low|Contains cod roe and usually bread; recipes vary
+ouzo|ouzo|greek anise spirit|beverages|packet|1825||alcohol|high|
+dolma|stuffed vine leaves|dolmades|other|packet|365||grain|medium|Meat versions exist alongside rice-only ones
+bechamel_mix|bechamel sauce mix|white sauce mix|condiments|packet|365|gluten,milk|grain,gluten,dairy|high|
+creme_patissiere_mix|creme patissiere mix|pastry cream mix|sweets|g|365|milk,egg|dairy,egg,refined_sugar|medium|Egg content varies by brand
+dijon_wholegrain|wholegrain dijon|moutarde a l ancienne|condiments|packet|365|mustard||high|
+herbes_salad|salad leaves mixed|mixed leaves|produce|piece|4|||high|
+# ============================ INDIAN REGIONAL AND PREPARED ============================
+idli_batter|idli batter|idli rava batter|other|packet|3||grain,legume|high|
+dosa_batter|dosa batter|dosa maavu|other|packet|3||grain,legume|high|
+idli_rava|idli rava|idli rice rava|grains|kg|180||grain|high|
+upma_rava|upma rava|bombay rava|grains|kg|180|gluten|grain,gluten|high|
+vermicelli_roasted|roasted vermicelli|seviyan bhuni|grains|kg|180|gluten|grain,gluten|high|
+khichdi_mix|khichdi mix|khichdi masala|other|packet|180||grain,legume|medium|Blend; some contain asafoetida
+dhokla_mix|dhokla mix|dhokla flour|other|packet|180||legume|medium|Some mixes contain wheat
+sev|sev|nylon sev|other|packet|60|peanuts|legume,nut|low|Fried in groundnut oil in most of India; brand dependent
+bhujia|bhujia|bikaneri bhujia|other|packet|60|peanuts|legume,nut|low|Usually fried in groundnut oil
+namkeen_mix|namkeen mix|chivda namkeen|other|packet|60|peanuts,tree_nuts|legume,nut|low|Mixed snack; nut content varies by brand
+boondi|boondi|boondi plain|other|packet|30||legume|medium|Fried; oil varies
+mathri|mathri|mathiya|other|packet|30|gluten|grain,gluten|high|
+khakhra|khakhra|khakra|other|packet|90|gluten|grain,gluten|high|
+thepla|thepla|methi thepla|bakery|piece|3|gluten|grain,gluten|high|
+poha_thick|thick poha|jada poha|grains|kg|180||grain|high|
+murukku|murukku|chakli|other|packet|30||legume,grain|medium|Rice and urad based; oil varies
+banana_chips|banana chips|kela chips|other|packet|60|||high|
+mixture_south|south indian mixture|kara boondi mixture|other|packet|60|peanuts|legume,nut|low|Contains peanuts and curry leaves; brand dependent
+appalam_fried|fried papad|papad tala hua|other|packet|30||legume|medium|Oil varies
+pickle_oil|pickle oil|achar ka tel|other|packet|365|mustard||medium|Usually mustard oil
+ghee_bilona|bilona ghee|a2 ghee|dairy|g|180|milk|dairy|high|
+curd_set|set curd|jamaya dahi|dairy|g|5|milk|dairy|high|
+lassi_sweet|sweet lassi|meethi lassi|beverages|packet|2|milk|dairy,refined_sugar|high|
+lassi_salted|salted lassi|namkeen lassi|beverages|packet|2|milk|dairy|high|
+chaas_masala|masala chaas|spiced buttermilk|beverages|packet|2|milk|dairy|high|
+paneer_tikka_marinade|paneer tikka marinade|tikka marinade|condiments|packet|14|milk|dairy,allium|medium|Yoghurt based; some contain besan
+tandoori_marinade|tandoori marinade|tandoori paste|condiments|packet|90|milk|dairy,allium|low|Most contain yoghurt and some contain nuts
+makhani_gravy|makhani gravy base|butter masala gravy|condiments|packet|7|milk,tree_nuts|dairy,nut,allium|low|Cashew and cream are both common; recipes vary
+korma_paste|korma paste|shahi korma paste|condiments|packet|180|tree_nuts,milk|nut,dairy,allium|low|Almond or cashew base with cream
+vindaloo_paste|vindaloo paste|vindalho|condiments|packet|180||allium,high_fodmap|medium|Traditional versions contain vinegar and sometimes pork fat
+# ============================ FROZEN AND PREPARED ============================
+frozen_peas|frozen peas|matar frozen|frozen|packet|180||legume,starchy,high_fodmap|high|
+frozen_corn|frozen sweetcorn|corn frozen|frozen|packet|180||grain,starchy|high|
+frozen_spinach|frozen spinach|palak frozen|frozen|packet|180|||high|
+frozen_mixed_veg|frozen mixed vegetables|mixed veg frozen|frozen|packet|180||starchy|high|
+frozen_paratha|frozen paratha|readymade paratha|frozen|packet|180|gluten|grain,gluten|medium|Some contain dairy
+frozen_samosa|frozen samosa|readymade samosa|frozen|packet|180|gluten|grain,gluten,starchy,root|medium|Filling varies; meat versions exist
+frozen_spring_roll|frozen spring rolls|spring roll|frozen|packet|180|gluten,soy|grain,gluten|medium|Wrappers are wheat; fillings vary
+frozen_chips|frozen chips|french fries|frozen|packet|365||root,starchy|medium|Some are coated in wheat batter
+frozen_puff_pastry|frozen puff pastry|ready rolled pastry|frozen|packet|180|gluten|grain,gluten|low|Butter versus vegetable fat varies by brand
+ice_cubes|ice|barf|frozen|packet|365|||high|
+# ============================ GLOBAL STAPLES AND PANTRY ============================
+water|water|pani|beverages|l||||high|
+cornflakes|cornflakes|corn flakes|grains|kg|180||grain|medium|Most contain barley malt and therefore gluten
+muesli|muesli|bircher muesli|grains|kg|180|gluten,tree_nuts|grain,gluten,nut|medium|Composition varies widely
+granola|granola|crunchy oat cereal|grains|kg|180|tree_nuts|grain,nut,refined_sugar|medium|Nut and oat content varies
+porridge_oats|porridge oats|quick oats|grains|kg|180||grain|medium|Usually cross-contaminated with wheat
+wheat_bran|wheat bran|choker|grains|kg|180|gluten|grain,gluten|high|
+wheat_germ|wheat germ|gehun ankur|grains|kg|90|gluten|grain,gluten|high|
+psyllium_husk|psyllium husk|isabgol|other|packet|365|||high|
+arrowroot|arrowroot powder|ararot|other|packet|730||starchy,vrat_ok|high|
+potato_starch|potato starch|aloo starch|other|packet|730||starchy,root|high|
+tapioca_starch|tapioca starch|cassava starch|other|packet|730||starchy|high|
+xanthan_gum|xanthan gum|xanthan|other|packet|730|||high|
+gelatin_veg|vegetarian setting agent|agar substitute|other|packet|730|||medium|Marketing term; check the actual gelling agent
+food_colour|food colouring|khane wala rang|other|packet|730|||medium|Some carmine based colours are insect derived
+citric_acid|citric acid|nimbu ka phool|other|packet|730|||high|
+msg|monosodium glutamate|ajinomoto,msg|other|packet|730|||high|
+soy_lecithin|soy lecithin|lecithin|other|packet|365|soy||high|
+vinegar_synthetic|synthetic vinegar|acetic acid vinegar|condiments|packet|730|||high|
+# ============================ MORE PRODUCE ============================
+butternut_squash|butternut squash|butternut|produce|piece|30||starchy|high|
+acorn_squash|acorn squash|winter squash|produce|piece|30||starchy|high|
+red_cabbage|red cabbage|purple cabbage|produce|piece|21|||high|
+spring_greens|spring greens|collard greens|produce|bunch|5|||high|
+endive|endive|chicory,witloof|produce|piece|10|||high|
+radicchio|radicchio|italian chicory|produce|piece|10|||high|
+pak_choi_baby|baby pak choi|baby bok choy|produce|piece|5|||high|
+samphire|samphire|sea asparagus|produce|piece|3|||medium|Seasonal and regional
+sorrel|sorrel|khatta palak|produce|bunch|4|||medium|Uncommon; regional names vary
+blueberry|blueberry|blueberries|produce|piece|7||vrat_ok|high|
+raspberry|raspberry|raspberries|produce|piece|3||vrat_ok|high|
+blackberry|blackberry|blackberries|produce|piece|3||high_fodmap,vrat_ok|high|
+cherry|cherry|cherries|produce|piece|7||high_fodmap,vrat_ok|high|
+apricot_fresh|fresh apricot|khubani taza|produce|piece|5||high_fodmap,vrat_ok|high|
+nectarine|nectarine|nectarines|produce|piece|7||high_fodmap,vrat_ok|high|
+kiwi|kiwi fruit|kiwi|produce|piece|14||vrat_ok|high|
+passionfruit|passion fruit|passionfruit|produce|piece|10||vrat_ok|high|
+dragon_fruit|dragon fruit|pitaya|produce|piece|10||vrat_ok|high|
+rhubarb|rhubarb|rhubarb stalks|produce|piece|7|||high|
+cranberry_fresh|fresh cranberries|cranberries|produce|piece|21||vrat_ok|high|
+starfruit|star fruit|kamrakh,carambola|produce|piece|7||vrat_ok|medium|Regional
+wood_apple|wood apple|bael,bel|produce|piece|14||vrat_ok|medium|Regional Indian fruit
+# ============================ MORE CHEESE AND DAIRY ============================
+gouda|gouda|dutch cheese|dairy|g|60|milk|dairy,animal_derived|medium|Rennet source varies
+emmental|emmental|emmentaler|dairy|g|60|milk|dairy,animal_derived|medium|Traditionally animal rennet
+provolone|provolone|provolone cheese|dairy|g|45|milk|dairy,animal_derived|medium|Rennet source varies
+burrata|burrata|burrata cheese|dairy|g|5|milk|dairy|high|
+stilton|stilton|english blue cheese|dairy|g|21|milk|dairy|medium|Stilton uses vegetarian rennet but check the label
+queso_fresco|queso fresco|fresh mexican cheese|dairy|g|7|milk|dairy|high|
+cotija|cotija|mexican aged cheese|dairy|g|60|milk|dairy|medium|Rennet source varies
+paneer_smoked|smoked paneer|malai paneer|dairy|g|3|milk|dairy|medium|Preparation varies
+kefir|kefir|kefir drink|dairy|g|14|milk|dairy|high|
+skyr|skyr|icelandic yoghurt|dairy|g|14|milk|dairy|high|
+clotted_cream|clotted cream|devon cream|dairy|g|7|milk|dairy|high|
+whey_powder|whey protein powder|whey protein|other|packet|365|milk|dairy|high|
+casein|casein|milk protein|other|packet|365|milk|dairy|high|
+ghee_vegetable|vanaspati ghee|dalda,vegetable ghee|other|packet|365|||medium|Hydrogenated vegetable fat, not dairy despite the name
+# ============================ MORE MEAT AND FISH ============================
+chicken_mince|chicken mince|chicken keema|meat|g|2||meat,poultry|high|
+mutton_mince|mutton mince|keema|meat|g|2||meat|high|
+beef_mince|beef mince|ground beef|meat|g|2||meat,beef|high|
+pork_mince|pork mince|ground pork|meat|g|2||meat,pork|high|
+chicken_wings|chicken wings|wings|meat|g|2||meat,poultry|high|
+chicken_liver|chicken liver|kaleji|meat|g|1||meat,poultry|high|
+mutton_liver|mutton liver|kaleji bakra|meat|g|1||meat|high|
+bone_marrow|bone marrow|nalli|meat|g|2||meat|high|
+trotters|trotters|paya|meat|g|2||meat|high|
+steak_sirloin|sirloin steak|sirloin|meat|g|3||meat,beef|high|
+steak_ribeye|ribeye steak|ribeye|meat|g|3||meat,beef|high|
+pork_ribs|pork ribs|spare ribs|meat|g|3||meat,pork|high|
+haddock|haddock|haddock fish|seafood|g|2|fish|fish|high|
+sea_bass|sea bass|bass|seafood|g|2|fish|fish|high|
+halibut|halibut|halibut fish|seafood|g|2|fish|fish|high|
+trout|trout|rainbow trout|seafood|g|2|fish|fish|high|
+hilsa|hilsa|ilish|seafood|g|2|fish|fish|medium|Bengali; seasonal
+seer_fish|seer fish|surmai,vanjaram,kingfish|seafood|g|2|fish|fish|high|
+basa|basa|pangasius|seafood|g|2|fish|fish|high|
+smoked_salmon|smoked salmon|lox|seafood|g|14|fish|fish|high|
+fish_fingers|fish fingers|fish sticks|frozen|packet|180|fish,gluten|fish,grain,gluten|high|
+surimi|surimi|crab sticks|seafood|g|14|fish,crustaceans,gluten|fish,shellfish,gluten|low|Made from white fish with crab flavouring; wheat starch is common
+# ============================ BAKING AND SWEET PANTRY ============================
+chocolate_chips|chocolate chips|choco chips|sweets|g|365|milk,soy|dairy,refined_sugar|medium|Dark versions may be dairy-free
+glace_cherry|glace cherries|candied cherries|sweets|g|365|sulphites|refined_sugar|medium|Usually contains sulphites and colouring
+mixed_peel|mixed peel|candied peel|sweets|g|365||refined_sugar|high|
+sprinkles|sprinkles|hundreds and thousands|sweets|g|730||refined_sugar|medium|Some contain shellac, which is insect derived
+fondant|fondant icing|sugar paste|sweets|g|365||refined_sugar|medium|Some contain gelatine
+royal_icing_mix|royal icing mix|icing mix|sweets|g|365|egg|egg,refined_sugar|medium|Usually contains dried egg white
+digestive_biscuit|digestive biscuit|digestives|bakery|piece|180|gluten|grain,gluten|medium|Some contain milk
+marie_biscuit|marie biscuit|marie|bakery|piece|180|gluten|grain,gluten|medium|Some contain milk solids
+oreo_style|chocolate sandwich biscuit|cream biscuit|bakery|piece|180|gluten,soy|grain,gluten,refined_sugar|medium|Usually dairy-free but made on shared lines
+shortbread|shortbread|butter biscuit|bakery|piece|180|gluten,milk|grain,gluten,dairy|high|
+sponge_cake|sponge cake|vanilla sponge|bakery|piece|4|gluten,egg,milk|grain,gluten,egg,dairy|high|

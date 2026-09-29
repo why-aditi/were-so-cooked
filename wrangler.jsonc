@@ -1,0 +1,237 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+
+  // One Worker serves the SPA, the API, both Durable Object classes and all
+  // three Workflows (section 3).
+  "name": "cooked-dev",
+  "main": "apps/worker/src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // The React SPA. `single-page-application` makes deep links like /app/plan
+  // serve index.html instead of 404ing, and `run_worker_first` keeps the API
+  // and health routes from being swallowed by the asset handler.
+  "assets": {
+    "directory": "apps/web/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/auth/*", "/admin/*", "/agents/*", "/healthz", "/status"]
+  },
+
+  // Section 13: errors always logged, other events sampled at 20%.
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.2
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // IMPORTANT: wrangler does NOT inherit bindings into named environments.
+  // Everything below is repeated in full under `env.staging` and
+  // `env.production`. A binding added here and forgotten there is silently
+  // missing in that environment, so treat the three blocks as one edit.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  "vars": {
+    "ENVIRONMENT": "dev",
+    // Section 9: fake login for local development only. The staging and
+    // production blocks must never set this, and CI fails if they do.
+    "DEV_AUTH": "true"
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cooked-db-dev",
+      "database_id": "PLACEHOLDER_SET_BY_BOOTSTRAP",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // Section 4 sizes this at 1024 dimensions for bge-m3. Section 3's component
+  // table also mentions a second `taste` index, but section 4 supersedes it:
+  // "Taste memory stays in each agent's SQLite instead of Vectorize." Only the
+  // recipes index is declared.
+  "vectorize": [
+    {
+      "binding": "RECIPES_INDEX",
+      "index_name": "cooked-recipes-dev"
+    }
+  ],
+
+  "r2_buckets": [
+    {
+      "binding": "UPLOADS",
+      "bucket_name": "cooked-uploads-dev"
+    }
+  ],
+
+  "ai": {
+    "binding": "AI"
+  },
+
+  "durable_objects": {
+    "bindings": [
+      { "name": "KITCHEN_AGENT", "class_name": "KitchenAgent" },
+      { "name": "BUDGET_KEEPER", "class_name": "BudgetKeeper" }
+    ]
+  },
+
+  // Section 12: the free plan offers the SQLite backend only, so both classes
+  // are created with `new_sqlite_classes`. Never renumber or edit an applied
+  // migration tag — add a new one.
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["KitchenAgent", "BudgetKeeper"]
+    }
+  ],
+
+  "workflows": [
+    {
+      "name": "cooked-weekly-plan-dev",
+      "binding": "WEEKLY_PLAN",
+      "class_name": "WeeklyPlanWorkflow"
+    },
+    {
+      "name": "cooked-photo-scan-dev",
+      "binding": "PHOTO_SCAN",
+      "class_name": "PhotoScanWorkflow"
+    },
+    {
+      "name": "cooked-viral-recipes-dev",
+      "binding": "VIRAL_RECIPES",
+      "class_name": "ViralRecipesWorkflow"
+    }
+  ],
+
+  // Section 3. 00:15 UTC deletes expired demo accounts; 00:30 Sunday starts the
+  // viral pipeline, just after the daily AI budget resets.
+  "triggers": {
+    "crons": ["15 0 * * *", "30 0 * * 0"]
+  },
+
+  "env": {
+    // ───────────────────────────────────────────────────────── staging ─────
+    // PR previews deploy here (section 13). Same shape as production so a
+    // preview exercises the real binding surface, but its own resources.
+    "staging": {
+      "name": "cooked-staging",
+      "compatibility_date": "2026-09-01",
+      "compatibility_flags": ["nodejs_compat"],
+      "assets": {
+        "directory": "apps/web/dist",
+        "binding": "ASSETS",
+        "not_found_handling": "single-page-application",
+        "run_worker_first": ["/api/*", "/auth/*", "/admin/*", "/agents/*", "/healthz", "/status"]
+      },
+      "observability": { "enabled": true, "head_sampling_rate": 0.2 },
+      "vars": {
+        "ENVIRONMENT": "staging"
+        // No DEV_AUTH, deliberately.
+        //
+        // wrangler warns on every build: "The following vars exist at the top
+        // level, but not on env.staging.vars ... Please add these vars".
+        // Do NOT act on that warning. DEV_AUTH is section 9's fake login;
+        // adding it here would let anyone sign in as anyone. The PR and main
+        // workflows both fail the build if it appears outside the dev block.
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "cooked-db-staging",
+          "database_id": "PLACEHOLDER_SET_BY_BOOTSTRAP",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "vectorize": [{ "binding": "RECIPES_INDEX", "index_name": "cooked-recipes-staging" }],
+      "r2_buckets": [{ "binding": "UPLOADS", "bucket_name": "cooked-uploads-staging" }],
+      "ai": { "binding": "AI" },
+      "durable_objects": {
+        "bindings": [
+          { "name": "KITCHEN_AGENT", "class_name": "KitchenAgent" },
+          { "name": "BUDGET_KEEPER", "class_name": "BudgetKeeper" }
+        ]
+      },
+      "migrations": [{ "tag": "v1", "new_sqlite_classes": ["KitchenAgent", "BudgetKeeper"] }],
+      "workflows": [
+        {
+          "name": "cooked-weekly-plan-staging",
+          "binding": "WEEKLY_PLAN",
+          "class_name": "WeeklyPlanWorkflow"
+        },
+        {
+          "name": "cooked-photo-scan-staging",
+          "binding": "PHOTO_SCAN",
+          "class_name": "PhotoScanWorkflow"
+        },
+        {
+          "name": "cooked-viral-recipes-staging",
+          "binding": "VIRAL_RECIPES",
+          "class_name": "ViralRecipesWorkflow"
+        }
+      ]
+      // No crons on staging: the viral pipeline costs ~2,500 neurons a run and
+      // the account budget is shared with production (section 12).
+    },
+
+    // ────────────────────────────────────────────────────── production ─────
+    "production": {
+      "name": "cooked",
+      "compatibility_date": "2026-09-01",
+      "compatibility_flags": ["nodejs_compat"],
+      "assets": {
+        "directory": "apps/web/dist",
+        "binding": "ASSETS",
+        "not_found_handling": "single-page-application",
+        "run_worker_first": ["/api/*", "/auth/*", "/admin/*", "/agents/*", "/healthz", "/status"]
+      },
+      "observability": { "enabled": true, "head_sampling_rate": 0.2 },
+      "vars": {
+        "ENVIRONMENT": "production"
+        // No DEV_AUTH, deliberately. wrangler warns that top-level vars are
+        // not inherited here — that warning is the desired behaviour, not a
+        // bug to fix. See the note in env.staging.vars.
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "cooked-db",
+          "database_id": "PLACEHOLDER_SET_BY_BOOTSTRAP",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "vectorize": [{ "binding": "RECIPES_INDEX", "index_name": "cooked-recipes" }],
+      "r2_buckets": [{ "binding": "UPLOADS", "bucket_name": "cooked-uploads" }],
+      "ai": { "binding": "AI" },
+      "durable_objects": {
+        "bindings": [
+          { "name": "KITCHEN_AGENT", "class_name": "KitchenAgent" },
+          { "name": "BUDGET_KEEPER", "class_name": "BudgetKeeper" }
+        ]
+      },
+      "migrations": [{ "tag": "v1", "new_sqlite_classes": ["KitchenAgent", "BudgetKeeper"] }],
+      "workflows": [
+        {
+          "name": "cooked-weekly-plan",
+          "binding": "WEEKLY_PLAN",
+          "class_name": "WeeklyPlanWorkflow"
+        },
+        {
+          "name": "cooked-photo-scan",
+          "binding": "PHOTO_SCAN",
+          "class_name": "PhotoScanWorkflow"
+        },
+        {
+          "name": "cooked-viral-recipes",
+          "binding": "VIRAL_RECIPES",
+          "class_name": "ViralRecipesWorkflow"
+        }
+      ],
+      "triggers": { "crons": ["15 0 * * *", "30 0 * * 0"] }
+    }
+  }
+
+  // Secrets are never in this file. Set with `wrangler secret put --env <env>`:
+  //   GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, SESSION_SIGNING_KEY,
+  //   ADMIN_TOKEN, YOUTUBE_API_KEY
+}

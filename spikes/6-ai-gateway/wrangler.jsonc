@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cooked-spike6-ai-gateway",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "ai": { "binding": "AI", "remote": true }
+  // Wrangler has no `ai gateway` subcommand, so the gateway is created over the
+  // REST API from inside the Worker when CLOUDFLARE_ACCOUNT_ID and
+  // CLOUDFLARE_API_TOKEN are present (the runner writes them to .dev.vars).
+  // Without them the spike still reports whether an existing gateway caches.
+}

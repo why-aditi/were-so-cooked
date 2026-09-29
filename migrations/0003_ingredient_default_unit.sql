@@ -1,0 +1,14 @@
+-- 0003_ingredient_default_unit
+--
+-- The unit to record when someone names an ingredient without one: "bought
+-- dhaniya" is a bunch, "bought milk" is a litre, "bought paneer" is grams.
+--
+-- This lived in the normalizer as two hardcoded maps (a bunch list and a
+-- per-category fallback). That was wrong twice over: a parser is the wrong
+-- place for facts about ingredients, and a category default cannot tell
+-- coriander from a carrot when both are produce.
+--
+-- NOT NULL with a default so the column can be added to a populated table.
+-- 'packet' is the least-wrong blanket guess; the seed then overwrites every
+-- row with a real value.
+ALTER TABLE ingredients ADD COLUMN default_unit TEXT NOT NULL DEFAULT 'packet';

@@ -1,0 +1,15 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.wrangler/
+.dev.vars
+.env*
+!.env.example
+
+# spike credentials, never committed
+spikes/.env
+
+# Playwright
+/test-results/
+/playwright-report/
+/e2e/.auth/

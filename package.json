@@ -1,0 +1,47 @@
+{
+  "name": "weresocooked",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "bootstrap": "tsx scripts/bootstrap.ts",
+    "build:web": "pnpm --filter @cooked/web build",
+    "deploy:production": "wrangler deploy --env production",
+    "deploy:staging": "wrangler deploy --env staging",
+    "dev:web": "pnpm --filter @cooked/web dev",
+    "e2e": "playwright test",
+    "eval": "vitest run evals",
+    "eval:live": "EVAL_LIVE=true vitest run evals",
+    "format": "prettier --write .",
+    "lint": "eslint .",
+    "migrate:production": "wrangler d1 migrations apply cooked-db --remote --env production",
+    "migrate:staging": "wrangler d1 migrations apply cooked-db-staging --remote --env staging",
+    "seed:build": "node seed/build-seed.mjs",
+    "seed:validate": "tsx scripts/validate-seed.mjs",
+    "test": "vitest run && pnpm --filter @cooked/worker exec vitest run",
+    "test:worker": "pnpm --filter @cooked/worker exec vitest run",
+    "typecheck": "tsc -b"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.21.3",
+    "@cooked/shared": "workspace:*",
+    "@eslint/js": "^9.20.0",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.6.2",
+    "@vitest/coverage-v8": "^4.1.0",
+    "eslint": "^9.20.0",
+    "fast-check": "^4.10.2",
+    "prettier": "^3.5.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.24.0",
+    "vitest": "^4.1.0",
+    "wrangler": "^4.137.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "workerd"
+    ]
+  }
+}

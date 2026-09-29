@@ -1,0 +1,51 @@
+{
+  // Test-only binding surface.
+  //
+  // The real wrangler.jsonc binds Workers AI and Vectorize, and neither has a
+  // local emulation — the pool tries to open a remote preview session for them
+  // and the whole run dies before a single test executes. Section 9's auth
+  // surface touches neither, so they are omitted here.
+  //
+  // ponytail: this file must stay a strict subset of the real config. If an
+  // auth route ever needs AI or Vectorize, do not add it here — that would
+  // trade a fast local suite for a networked one. Move the test to the live
+  // eval suite in section 13 instead.
+  "name": "cooked-test",
+  "main": "../src/index.ts",
+  // Tracks the newest date the pool's bundled workerd accepts, which trails
+  // the real wrangler.jsonc's 2026-09-01. Raising this fails the run outright
+  // rather than falling back, so it moves when the pool's workerd moves.
+  //
+  // The divergence is real and worth knowing about: a behaviour that changed
+  // between these two dates would pass here and differ in production. Nothing
+  // this suite asserts sits on such a change today, and the date it must not
+  // fall below is 2026-03-15 — the Agents SDK needs `ctx.id.name`, which is
+  // what forced the pool and vitest upgrade in the first place.
+  "compatibility_date": "2026-08-18",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "ENVIRONMENT": "dev",
+    "DEV_AUTH": "true"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cooked-db-test",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "../../migrations"
+    }
+  ],
+  "r2_buckets": [{ "binding": "UPLOADS", "bucket_name": "cooked-uploads-test" }],
+  "durable_objects": {
+    "bindings": [
+      { "name": "KITCHEN_AGENT", "class_name": "KitchenAgent" },
+      { "name": "BUDGET_KEEPER", "class_name": "BudgetKeeper" }
+    ]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["KitchenAgent", "BudgetKeeper"] }],
+  "workflows": [
+    { "name": "cooked-weekly-plan-test", "binding": "WEEKLY_PLAN", "class_name": "WeeklyPlanWorkflow" },
+    { "name": "cooked-photo-scan-test", "binding": "PHOTO_SCAN", "class_name": "PhotoScanWorkflow" },
+    { "name": "cooked-viral-recipes-test", "binding": "VIRAL_RECIPES", "class_name": "ViralRecipesWorkflow" }
+  ]
+}

@@ -1,0 +1,830 @@
+[
+  {
+    "from_id": "chicken",
+    "to_id": "soya_chaap",
+    "rule": "vegan",
+    "ratio_note": null,
+    "explanation": "Soya chaap takes a tandoori marinade the way chicken does.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "chicken",
+    "to_id": "tofu_firm",
+    "rule": "vegan",
+    "ratio_note": "Press tofu 20 minutes before marinating.",
+    "explanation": "Extra-firm tofu holds its shape in a gravy.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "chicken",
+    "to_id": "jackfruit_raw",
+    "rule": "vegan",
+    "ratio_note": "Simmer until it shreds.",
+    "explanation": "Raw jackfruit pulls apart like slow-cooked meat.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "butter",
+    "to_id": "coconut_oil",
+    "rule": "vegan",
+    "ratio_note": "Use 15 percent less by weight.",
+    "explanation": "Coconut oil carries spice the way butter does.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "butter",
+    "to_id": "cashew_cream",
+    "rule": "vegan",
+    "ratio_note": "Blend soaked cashews until smooth.",
+    "explanation": "Cashew cream replaces butter for richness.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "fresh_cream",
+    "to_id": "cashew_cream",
+    "rule": "vegan",
+    "ratio_note": "Blend soaked cashews until smooth.",
+    "explanation": "Cashew cream replaces dairy cream.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "double_cream",
+    "to_id": "coconut_cream",
+    "rule": "vegan",
+    "ratio_note": null,
+    "explanation": "Coconut cream thickens a gravy like double cream.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "cashew_cream",
+    "to_id": "sunflower_seed",
+    "rule": "tree_nuts",
+    "ratio_note": "Soak and blend as for cashews.",
+    "explanation": "Sunflower-seed cream, chosen because it passes both the vegan and the nut rule.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "cashew_cream",
+    "to_id": "oat_milk",
+    "rule": "tree_nuts",
+    "ratio_note": null,
+    "explanation": "Oat cream, chosen because it passes both the vegan and the nut rule.",
+    "confidence": "medium",
+    "review_note": "Oat is not gluten-free unless certified"
+  },
+  {
+    "from_id": "egg",
+    "to_id": "flaxseed",
+    "rule": "vegan",
+    "ratio_note": "1 tbsp ground flax plus 3 tbsp water per egg.",
+    "explanation": "A flax egg binds where the egg was structural.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "egg",
+    "to_id": "flaxseed",
+    "rule": "egg",
+    "ratio_note": "1 tbsp ground flax plus 3 tbsp water per egg.",
+    "explanation": "A flax egg binds where the egg was structural.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "onion",
+    "to_id": "asafoetida_gf",
+    "rule": "jain",
+    "ratio_note": null,
+    "explanation": "Hing and a tomato base give the savoury depth onion would.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "garlic",
+    "to_id": "asafoetida_gf",
+    "rule": "jain",
+    "ratio_note": null,
+    "explanation": "Hing and a tomato base give the savoury depth garlic would.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "onion",
+    "to_id": "asafoetida_gf",
+    "rule": "sattvic",
+    "ratio_note": null,
+    "explanation": "Hing replaces the allium base in sattvic cooking.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "garlic",
+    "to_id": "asafoetida_gf",
+    "rule": "sattvic",
+    "ratio_note": null,
+    "explanation": "Hing replaces the allium base in sattvic cooking.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "soy_sauce",
+    "to_id": "tamari",
+    "rule": "gluten_free",
+    "ratio_note": null,
+    "explanation": "Tamari is brewed without wheat.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "soy_sauce",
+    "to_id": "tamari",
+    "rule": "gluten",
+    "ratio_note": null,
+    "explanation": "Tamari is brewed without wheat.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "paneer",
+    "to_id": "tofu_firm",
+    "rule": "vegan",
+    "ratio_note": "Press and cube as you would paneer.",
+    "explanation": "Tofu takes the same marinades.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "paneer",
+    "to_id": "tofu_firm",
+    "rule": "dairy_free",
+    "ratio_note": "Press and cube as you would paneer.",
+    "explanation": "Tofu takes the same marinades.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "paneer",
+    "to_id": "tofu_firm",
+    "rule": "milk",
+    "ratio_note": "Press and cube as you would paneer.",
+    "explanation": "Tofu takes the same marinades.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "milk",
+    "to_id": "oat_milk",
+    "rule": "vegan",
+    "ratio_note": null,
+    "explanation": "Oat milk behaves closest to dairy milk in cooking.",
+    "confidence": "medium",
+    "review_note": "Not gluten-free unless certified"
+  },
+  {
+    "from_id": "milk",
+    "to_id": "soy_milk",
+    "rule": "vegan",
+    "ratio_note": null,
+    "explanation": "Soy milk has the protein to curdle and thicken like dairy.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "milk",
+    "to_id": "coconut_milk",
+    "rule": "milk",
+    "ratio_note": null,
+    "explanation": "Coconut milk replaces dairy in most Indian gravies.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "yoghurt",
+    "to_id": "coconut_milk",
+    "rule": "vegan",
+    "ratio_note": "Add a squeeze of lemon for the sourness.",
+    "explanation": "Coconut milk plus acid stands in for curd.",
+    "confidence": "medium",
+    "review_note": "Texture differs noticeably"
+  },
+  {
+    "from_id": "ghee",
+    "to_id": "coconut_oil",
+    "rule": "vegan",
+    "ratio_note": null,
+    "explanation": "Coconut oil is the closest fat by smoke point and body.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "ghee",
+    "to_id": "vegetable_oil",
+    "rule": "dairy_free",
+    "ratio_note": null,
+    "explanation": "Neutral oil where ghee was only a cooking fat.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "butter",
+    "to_id": "margarine",
+    "rule": "dairy_free",
+    "ratio_note": null,
+    "explanation": "Dairy-free margarine, only if the brand confirms no milk solids.",
+    "confidence": "low",
+    "review_note": "Many margarines contain milk solids"
+  },
+  {
+    "from_id": "cheddar",
+    "to_id": "tofu_firm",
+    "rule": "vegan",
+    "ratio_note": null,
+    "explanation": "Works only where cheese was a filler, not where it melts.",
+    "confidence": "low",
+    "review_note": "Texture and flavour differ substantially"
+  },
+  {
+    "from_id": "mozzarella",
+    "to_id": "cashew_cream",
+    "rule": "vegan",
+    "ratio_note": null,
+    "explanation": "Only for baked dishes where the cheese melts into a sauce.",
+    "confidence": "low",
+    "review_note": "Will not stretch or brown like mozzarella"
+  },
+  {
+    "from_id": "condensed_milk",
+    "to_id": "coconut_cream",
+    "rule": "vegan",
+    "ratio_note": "Reduce with sugar to thicken.",
+    "explanation": "Sweetened coconut cream in place of condensed milk.",
+    "confidence": "medium",
+    "review_note": "Sweetness needs adjusting"
+  },
+  {
+    "from_id": "cream_cheese",
+    "to_id": "tofu_silken",
+    "rule": "vegan",
+    "ratio_note": "Blend with lemon and salt.",
+    "explanation": "Silken tofu blended smooth stands in for cream cheese.",
+    "confidence": "medium",
+    "review_note": "Best in cooked applications"
+  },
+  {
+    "from_id": "cashew",
+    "to_id": "sunflower_seed",
+    "rule": "tree_nuts",
+    "ratio_note": "Soak before blending.",
+    "explanation": "Sunflower seeds thicken a gravy the way cashews do.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "cashew",
+    "to_id": "pumpkin_seed",
+    "rule": "tree_nuts",
+    "ratio_note": null,
+    "explanation": "Pumpkin seeds blend to a similar body.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "almond",
+    "to_id": "sunflower_seed",
+    "rule": "tree_nuts",
+    "ratio_note": null,
+    "explanation": "Sunflower seeds where almonds were a thickener.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "peanut",
+    "to_id": "pumpkin_seed",
+    "rule": "peanuts",
+    "ratio_note": null,
+    "explanation": "Pumpkin seeds give the crunch without the legume.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "peanut_butter",
+    "to_id": "tahini",
+    "rule": "peanuts",
+    "ratio_note": null,
+    "explanation": "Tahini has the same texture and roasted note.",
+    "confidence": "medium",
+    "review_note": "Sesame is itself an allergen"
+  },
+  {
+    "from_id": "peanut_butter",
+    "to_id": "sunflower_seed",
+    "rule": "peanuts",
+    "ratio_note": "Blend to a paste.",
+    "explanation": "Sunflower-seed butter is the standard nut-free swap.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "pistachio",
+    "to_id": "pumpkin_seed",
+    "rule": "tree_nuts",
+    "ratio_note": null,
+    "explanation": "Pumpkin seeds for colour and crunch.",
+    "confidence": "medium",
+    "review_note": "Flavour is quite different"
+  },
+  {
+    "from_id": "walnut",
+    "to_id": "pumpkin_seed",
+    "rule": "tree_nuts",
+    "ratio_note": null,
+    "explanation": "Pumpkin seeds where walnuts were textural.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "wheat_flour",
+    "to_id": "jowar_flour",
+    "rule": "gluten_free",
+    "ratio_note": null,
+    "explanation": "Jowar makes a workable flatbread without gluten.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "wheat_flour",
+    "to_id": "bajra_flour",
+    "rule": "gluten_free",
+    "ratio_note": null,
+    "explanation": "Bajra for a denser, nuttier flatbread.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "wheat_flour",
+    "to_id": "rice_flour",
+    "rule": "gluten_free",
+    "ratio_note": "Needs a binder such as psyllium.",
+    "explanation": "Rice flour for batters and coatings.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "maida",
+    "to_id": "rice_flour",
+    "rule": "gluten_free",
+    "ratio_note": null,
+    "explanation": "Rice flour for frying batters.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "maida",
+    "to_id": "cornstarch",
+    "rule": "gluten_free",
+    "ratio_note": null,
+    "explanation": "Cornflour where maida was a thickener only.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "sooji",
+    "to_id": "rice_flour",
+    "rule": "gluten_free",
+    "ratio_note": null,
+    "explanation": "Rice flour changes the texture but keeps the dish gluten-free.",
+    "confidence": "medium",
+    "review_note": "Upma and halwa will differ"
+  },
+  {
+    "from_id": "pasta_dry",
+    "to_id": "rice_noodles",
+    "rule": "gluten_free",
+    "ratio_note": null,
+    "explanation": "Rice noodles where pasta was the carbohydrate.",
+    "confidence": "medium",
+    "review_note": "Sauce clings differently"
+  },
+  {
+    "from_id": "bread_white",
+    "to_id": "tortilla_corn",
+    "rule": "gluten_free",
+    "ratio_note": null,
+    "explanation": "Corn tortilla where bread was a wrap.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "breadcrumbs",
+    "to_id": "rice_flour",
+    "rule": "gluten_free",
+    "ratio_note": null,
+    "explanation": "Rice flour or crushed rice flakes for coating.",
+    "confidence": "medium",
+    "review_note": "Browning differs"
+  },
+  {
+    "from_id": "panko",
+    "to_id": "poha",
+    "rule": "gluten_free",
+    "ratio_note": "Crush lightly.",
+    "explanation": "Crushed poha gives a similar crisp coating.",
+    "confidence": "medium",
+    "review_note": "Regional substitute"
+  },
+  {
+    "from_id": "barley",
+    "to_id": "rice_basmati",
+    "rule": "gluten_free",
+    "ratio_note": null,
+    "explanation": "Rice where barley was the grain.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "couscous",
+    "to_id": "quinoa",
+    "rule": "gluten_free",
+    "ratio_note": null,
+    "explanation": "Quinoa has a similar size and absorbency.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "naan",
+    "to_id": "roti",
+    "rule": "dairy_free",
+    "ratio_note": null,
+    "explanation": "Plain roti has no dairy where naan usually does.",
+    "confidence": "medium",
+    "review_note": "Roti still contains gluten"
+  },
+  {
+    "from_id": "onion",
+    "to_id": "asafoetida_gf",
+    "rule": "low_fodmap",
+    "ratio_note": "A pinch replaces a whole onion.",
+    "explanation": "Hing gives savoury depth without the fructans.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "garlic",
+    "to_id": "asafoetida_gf",
+    "rule": "low_fodmap",
+    "ratio_note": "A pinch replaces several cloves.",
+    "explanation": "Hing gives savoury depth without the fructans.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "onion",
+    "to_id": "spring_onion",
+    "rule": "low_fodmap",
+    "ratio_note": "Green tops only.",
+    "explanation": "The green part of spring onion is low FODMAP.",
+    "confidence": "medium",
+    "review_note": "Only the green tops qualify"
+  },
+  {
+    "from_id": "ginger_garlic_paste",
+    "to_id": "asafoetida_gf",
+    "rule": "jain",
+    "ratio_note": null,
+    "explanation": "Hing replaces the whole paste.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "potato",
+    "to_id": "raw_banana",
+    "rule": "jain",
+    "ratio_note": null,
+    "explanation": "Raw banana has the body of potato without being a root.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "potato",
+    "to_id": "ash_gourd",
+    "rule": "jain",
+    "ratio_note": null,
+    "explanation": "Ash gourd for bulk in a Jain curry.",
+    "confidence": "medium",
+    "review_note": "Texture is softer"
+  },
+  {
+    "from_id": "carrot",
+    "to_id": "capsicum",
+    "rule": "jain",
+    "ratio_note": null,
+    "explanation": "Capsicum for sweetness and colour.",
+    "confidence": "medium",
+    "review_note": "Not a close match"
+  },
+  {
+    "from_id": "ginger",
+    "to_id": "black_pepper",
+    "rule": "jain",
+    "ratio_note": null,
+    "explanation": "Pepper for heat where ginger was a warming note.",
+    "confidence": "medium",
+    "review_note": "Flavour differs"
+  },
+  {
+    "from_id": "onion",
+    "to_id": "cabbage",
+    "rule": "jain",
+    "ratio_note": null,
+    "explanation": "Shredded cabbage for bulk and sweetness.",
+    "confidence": "medium",
+    "review_note": "Lacks the savoury base"
+  },
+  {
+    "from_id": "fish_sauce",
+    "to_id": "soy_sauce",
+    "rule": "vegan",
+    "ratio_note": "Add a pinch of seaweed for the marine note.",
+    "explanation": "Soy sauce plus kombu approximates fish sauce.",
+    "confidence": "medium",
+    "review_note": "Less pungent than the original"
+  },
+  {
+    "from_id": "fish_sauce",
+    "to_id": "tamari",
+    "rule": "fish",
+    "ratio_note": null,
+    "explanation": "Tamari plus a little miso for depth.",
+    "confidence": "medium",
+    "review_note": "Not a close match"
+  },
+  {
+    "from_id": "prawn",
+    "to_id": "tofu_firm",
+    "rule": "shellfish",
+    "ratio_note": null,
+    "explanation": "Tofu where prawn was protein.",
+    "confidence": "medium",
+    "review_note": "Texture is quite different"
+  },
+  {
+    "from_id": "prawn",
+    "to_id": "mushroom_button",
+    "rule": "crustaceans",
+    "ratio_note": null,
+    "explanation": "Mushroom for a savoury bite.",
+    "confidence": "medium",
+    "review_note": "Flavour differs"
+  },
+  {
+    "from_id": "anchovy",
+    "to_id": "miso_white",
+    "rule": "fish",
+    "ratio_note": null,
+    "explanation": "Miso gives the same salty depth.",
+    "confidence": "medium",
+    "review_note": "Less sharp"
+  },
+  {
+    "from_id": "chicken",
+    "to_id": "paneer",
+    "rule": "vegetarian",
+    "ratio_note": null,
+    "explanation": "Paneer where chicken was the protein.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "chicken",
+    "to_id": "soya_chaap",
+    "rule": "vegetarian",
+    "ratio_note": null,
+    "explanation": "Soya chaap in a tandoori preparation.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "mutton",
+    "to_id": "jackfruit_raw",
+    "rule": "vegetarian",
+    "ratio_note": "Simmer until it shreds.",
+    "explanation": "Raw jackfruit for a shredded texture.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "beef",
+    "to_id": "king_oyster_mushroom",
+    "rule": "vegetarian",
+    "ratio_note": null,
+    "explanation": "King oyster mushroom for a meaty bite.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "pork",
+    "to_id": "jackfruit_raw",
+    "rule": "halal",
+    "ratio_note": null,
+    "explanation": "Jackfruit where pork was the protein.",
+    "confidence": "medium",
+    "review_note": "Flavour differs substantially"
+  },
+  {
+    "from_id": "bacon",
+    "to_id": "tempeh",
+    "rule": "vegan",
+    "ratio_note": "Marinate in soy and maple.",
+    "explanation": "Smoked tempeh strips for the salt and smoke.",
+    "confidence": "medium",
+    "review_note": "Texture differs"
+  },
+  {
+    "from_id": "gelatin",
+    "to_id": "agar_agar",
+    "rule": "vegan",
+    "ratio_note": "Use about half the weight.",
+    "explanation": "Agar sets a jelly without animal products.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "gelatin",
+    "to_id": "agar_agar",
+    "rule": "vegetarian",
+    "ratio_note": "Use about half the weight.",
+    "explanation": "Agar sets a jelly without animal products.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "lard",
+    "to_id": "coconut_oil",
+    "rule": "vegetarian",
+    "ratio_note": null,
+    "explanation": "Coconut oil for shortening in pastry.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "suet",
+    "to_id": "shortening",
+    "rule": "vegetarian",
+    "ratio_note": null,
+    "explanation": "Vegetable shortening in place of beef suet.",
+    "confidence": "medium",
+    "review_note": "Some shortening contains dairy"
+  },
+  {
+    "from_id": "egg",
+    "to_id": "tofu_silken",
+    "rule": "vegan",
+    "ratio_note": "Blend until smooth.",
+    "explanation": "Silken tofu for a custard or quiche set.",
+    "confidence": "medium",
+    "review_note": "Will not aerate"
+  },
+  {
+    "from_id": "egg",
+    "to_id": "besan",
+    "rule": "vegan",
+    "ratio_note": "2 tbsp besan plus 2 tbsp water per egg.",
+    "explanation": "Besan batter binds a fritter.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "egg",
+    "to_id": "besan",
+    "rule": "egg",
+    "ratio_note": "2 tbsp besan plus 2 tbsp water per egg.",
+    "explanation": "Besan batter binds a fritter.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "mayonnaise",
+    "to_id": "eggless_mayonnaise",
+    "rule": "egg",
+    "ratio_note": null,
+    "explanation": "Eggless mayonnaise, if the brand confirms no egg.",
+    "confidence": "medium",
+    "review_note": "Most still contain mustard"
+  },
+  {
+    "from_id": "honey",
+    "to_id": "maple_syrup",
+    "rule": "vegan",
+    "ratio_note": null,
+    "explanation": "Maple syrup is the standard vegan swap for honey.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "honey",
+    "to_id": "jaggery",
+    "rule": "vegan",
+    "ratio_note": "Dissolve in a little warm water.",
+    "explanation": "Jaggery syrup where honey was a sweetener.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "honey",
+    "to_id": "maple_syrup",
+    "rule": "jain",
+    "ratio_note": null,
+    "explanation": "Maple syrup, since Jain excludes honey.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "tahini",
+    "to_id": "sunflower_seed",
+    "rule": "sesame",
+    "ratio_note": "Blend to a paste.",
+    "explanation": "Sunflower-seed paste where tahini was for body.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "sesame_seed",
+    "to_id": "poppy_seed",
+    "rule": "sesame",
+    "ratio_note": null,
+    "explanation": "Poppy seeds for the same textural sprinkle.",
+    "confidence": "medium",
+    "review_note": "Flavour differs"
+  },
+  {
+    "from_id": "asafoetida",
+    "to_id": "asafoetida_gf",
+    "rule": "gluten_free",
+    "ratio_note": null,
+    "explanation": "Rice-flour or pure hing in place of the wheat-compounded kind.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "asafoetida",
+    "to_id": "asafoetida_gf",
+    "rule": "gluten",
+    "ratio_note": null,
+    "explanation": "Rice-flour or pure hing in place of the wheat-compounded kind.",
+    "confidence": "high",
+    "review_note": ""
+  },
+  {
+    "from_id": "soba_noodles",
+    "to_id": "soba_juwari",
+    "rule": "gluten_free",
+    "ratio_note": null,
+    "explanation": "Juwari soba is 100 percent buckwheat and contains no wheat.",
+    "confidence": "medium",
+    "review_note": "Verify the label; the term is not always used accurately"
+  },
+  {
+    "from_id": "soba_noodles",
+    "to_id": "rice_noodles",
+    "rule": "gluten_free",
+    "ratio_note": null,
+    "explanation": "Rice noodles where soba was the carbohydrate.",
+    "confidence": "medium",
+    "review_note": "Flavour is much milder"
+  },
+  {
+    "from_id": "sausage_pork",
+    "to_id": "sausage_pork_gf",
+    "rule": "gluten_free",
+    "ratio_note": null,
+    "explanation": "Sausage bound with rice flour rather than rusk.",
+    "confidence": "medium",
+    "review_note": "Verify the label"
+  },
+  {
+    "from_id": "wasabi_paste",
+    "to_id": "wasabi_real",
+    "rule": "mustard",
+    "ratio_note": null,
+    "explanation": "Genuine wasabi rhizome contains no mustard.",
+    "confidence": "medium",
+    "review_note": "Expensive and hard to find outside Japan"
+  },
+  {
+    "from_id": "wasabi_paste",
+    "to_id": "ginger",
+    "rule": "mustard",
+    "ratio_note": null,
+    "explanation": "Pickled ginger where wasabi was for heat alongside sushi.",
+    "confidence": "medium",
+    "review_note": "Different flavour entirely"
+  }
+]

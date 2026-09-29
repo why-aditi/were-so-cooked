@@ -1,0 +1,110 @@
+name: Live eval
+
+# Section 13: "Live runs cost neurons, so they are manual GitHub Actions runs
+# with a neuron cap. Each live run writes a report to evals/reports/ that is
+# committed."
+#
+# Manual only. There is no schedule and no push trigger on purpose: the whole
+# account gets 10,000 neurons per rolling 24 hours (section 12), and an eval
+# that ran itself would spend the product's budget on proving the product
+# works. The recorded suite covers every pull request for free.
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Which eval suite to run
+        type: choice
+        options: [safety, plan-quality, photo-extraction]
+        default: safety
+      neuron_cap:
+        description: Hard ceiling on neurons for this run
+        type: string
+        default: '300'
+      commit_report:
+        description: Commit the report to evals/reports/
+        type: boolean
+        default: true
+
+concurrency:
+  # Two live runs at once would each think they had the whole cap.
+  group: live-eval
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Refuse an unreasonable cap
+        # A typo in the box should not be able to spend the day's budget.
+        # 1,000 is a tenth of the account ceiling and far more than any
+        # suite needs.
+        run: |
+          cap='${{ inputs.neuron_cap }}'
+          if ! [[ "$cap" =~ ^[0-9]+$ ]] || [ "$cap" -lt 1 ] || [ "$cap" -gt 1000 ]; then
+            echo "::error::neuron_cap must be a whole number between 1 and 1000 (got '$cap')"
+            exit 1
+          fi
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Check the budget before spending any of it
+        # Section 12's ledger already knows what is left. Starting a run that
+        # cannot finish wastes whatever it spends before it stops.
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          BASE_URL: ${{ vars.PRODUCTION_URL }}
+        run: |
+          if [ -z "$BASE_URL" ]; then
+            echo "::notice::No PRODUCTION_URL set; skipping the pre-flight budget check."
+            exit 0
+          fi
+          left=$(curl -sf "$BASE_URL/api/budget" | jq -r '.account.left // 0')
+          echo "Account neurons left: $left"
+          if [ "${left%.*}" -lt "${{ inputs.neuron_cap }}" ]; then
+            echo "::error::Only $left neurons left; the cap is ${{ inputs.neuron_cap }}. Try after the rolling window clears."
+            exit 1
+          fi
+
+      - name: Run the eval
+        env:
+          EVAL_LIVE: 'true'
+          EVAL_NEURON_CAP: ${{ inputs.neuron_cap }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: pnpm vitest run evals/${{ inputs.suite }}
+
+      - name: Upload the report
+        # Uploaded even when the eval fails: a failing live run is the one
+        # whose report matters most.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-${{ inputs.suite }}-${{ github.run_id }}
+          path: evals/reports/
+          if-no-files-found: warn
+
+      - name: Commit the report
+        if: always() && inputs.commit_report
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add evals/reports/
+          if git diff --staged --quiet; then
+            echo "No new report to commit."
+          else
+            git commit -m "chore(evals): live ${{ inputs.suite }} run (cap ${{ inputs.neuron_cap }})"
+            git push
+          fi

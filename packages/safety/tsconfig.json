@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    // Only the seed test touches the filesystem, to read seed/*.json and prove
+    // the engine works against the real taxonomy. The library itself imports
+    // nothing from node and performs no I/O, which is what section 3 means by
+    // keeping this package pure.
+    "types": ["node"]
+  },
+  "include": ["src"],
+  "references": [{ "path": "../shared" }]
+}

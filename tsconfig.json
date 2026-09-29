@@ -1,0 +1,17 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./packages/shared"
+    },
+    {
+      "path": "./packages/safety"
+    },
+    {
+      "path": "./packages/prompts"
+    },
+    {
+      "path": "./apps/worker"
+    }
+  ]
+}

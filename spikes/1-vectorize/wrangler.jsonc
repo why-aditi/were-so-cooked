@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cooked-spike1-vectorize",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "ai": { "binding": "AI", "remote": true },
+  // The runner creates this index with `wrangler vectorize create` before
+  // starting dev, and deletes it afterwards. If creation is refused on the
+  // free plan, that refusal is the spike's answer.
+  "vectorize": [
+    {
+      "binding": "RECIPES",
+      "index_name": "cooked-spike1",
+      "remote": true
+    }
+  ]
+}

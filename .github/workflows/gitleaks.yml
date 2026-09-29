@@ -1,0 +1,40 @@
+name: gitleaks
+
+# Section 13: the repo is public from day 1, so every push is scanned for
+# committed secrets. This runs on pushes to any branch and on pull requests,
+# including forks — a leaked key does not care which branch it landed on.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: Scan for committed secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # gitleaks needs history to scan the commits a push introduced, not
+          # just the working tree. A secret added and then deleted in a later
+          # commit is still in the history and still leaked.
+          fetch-depth: 0
+
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: false
+
+      # Defence in depth: gitleaks matches secret-shaped strings, but these two
+      # files are secrets by definition regardless of their contents.
+      - name: .dev.vars and .env must not be tracked
+        run: |
+          tracked=$(git ls-files | grep -E '(^|/)(\.dev\.vars|\.env)$' || true)
+          if [ -n "$tracked" ]; then
+            echo "::error::These files are tracked but must never be committed:"
+            echo "$tracked"
+            exit 1
+          fi
+          echo "No credential files tracked."

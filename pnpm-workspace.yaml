@@ -1,0 +1,6 @@
+packages:
+  - apps/*
+  - packages/*
+  # The eval suites import the real safety engine and the real shared
+  # schemas, so they need the workspace links like any other package.
+  - evals

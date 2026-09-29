@@ -1,0 +1,137 @@
+name: main
+
+on:
+  push:
+    branches: [main]
+
+# Never let two deploys race: the second could roll back to the first's version.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Typecheck, lint, test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+      - name: DEV_AUTH must not be set outside dev
+        run: |
+          python3 - <<'PY'
+          import json, re, sys
+          raw = open('wrangler.jsonc', encoding='utf-8').read()
+          cfg = json.loads(re.sub(r'^\s*//.*$', '', raw, flags=re.M))
+          bad = [n for n, b in (cfg.get('env') or {}).items() if 'DEV_AUTH' in (b.get('vars') or {})]
+          if bad:
+              print(f"::error::DEV_AUTH set in: {', '.join(bad)}")
+              sys.exit(1)
+          PY
+
+  deploy:
+    name: Migrate, deploy, smoke test
+    needs: check
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PROD_URL: ${{ vars.PRODUCTION_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build web
+        run: pnpm --filter @cooked/web build || echo "::notice::apps/web has no build yet"
+
+      # Recorded before deploying: the rollback target must be the version that
+      # was live *before* this run, and after the deploy that information is
+      # gone from the top of the list.
+      - name: Record the current live version
+        id: current
+        run: |
+          id=$(pnpm exec wrangler deployments list --env production --json 2>/dev/null \
+               | python3 -c "import json,sys; d=json.load(sys.stdin); print(d[0]['versions'][0]['version_id'] if d else '')" 2>/dev/null || true)
+          echo "version_id=$id" >> "$GITHUB_OUTPUT"
+          echo "Previous live version: ${id:-none (first deploy)}"
+
+      # Migrations run before the deploy so the new code never meets an old
+      # schema. This makes every migration forward-compatible by necessity:
+      # the old code runs against the new schema for the length of the deploy.
+      - name: Apply D1 migrations
+        run: pnpm exec wrangler d1 migrations apply cooked-db --remote --env production
+
+      - name: Deploy
+        run: pnpm exec wrangler deploy --env production
+
+      - name: Smoke test — /healthz
+        id: smoke_health
+        run: |
+          for i in 1 2 3 4 5; do
+            code=$(curl -sS -o /tmp/health.json -w '%{http_code}' "$PROD_URL/healthz" || echo 000)
+            if [ "$code" = "200" ]; then
+              echo "healthz OK"; cat /tmp/health.json; exit 0
+            fi
+            echo "attempt $i: HTTP $code"; sleep 5
+          done
+          echo "::error::/healthz did not return 200"
+          cat /tmp/health.json 2>/dev/null || true
+          exit 1
+
+      # Section 13 smoke-tests the demo flow after every deploy. The route
+      # exists now, so this is a real check rather than a notice — a 404 or
+      # a 500 here triggers the rollback below.
+      #
+      # A 429 is a pass: section 9 caps demo accounts at five per IP per
+      # hour, and several deploys in an hour from one runner will hit that.
+      # The endpoint answering with its own rate limit is proof it is alive,
+      # which is what a smoke test asks.
+      - name: Smoke test — demo flow
+        run: |
+          code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$PROD_URL/auth/demo"             -H 'content-type: application/json' -H "origin: $PROD_URL" || echo 000)
+          case "$code" in
+            200) echo "demo flow OK" ;;
+            429) echo "::notice::/auth/demo rate-limited (429) — the endpoint is up" ;;
+            *) echo "::error::/auth/demo returned $code"; exit 1 ;;
+          esac
+
+      # The full flow through a browser, against production, immediately
+      # after the deploy. Without `E2E_LIVE_AI`, so the chat-turn specs skip
+      # and a deploy spends no neurons.
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Smoke test — end to end
+        id: smoke_e2e
+        env:
+          E2E_BASE_URL: ${{ vars.PRODUCTION_URL }}
+        run: pnpm e2e --project=desktop
+
+      # Only fires if a smoke test above failed. Rolling back to an empty
+      # version id would be worse than leaving the bad deploy up and visible.
+      - name: Roll back
+        if: failure() && steps.current.outputs.version_id != ''
+        run: |
+          echo "::error::Smoke test failed — rolling back to ${{ steps.current.outputs.version_id }}"
+          pnpm exec wrangler rollback "${{ steps.current.outputs.version_id }}" --env production --message "Automatic rollback: smoke test failed for ${{ github.sha }}"
+          curl -sS -o /dev/null -w 'post-rollback /healthz: %{http_code}\n' "$PROD_URL/healthz" || true
+
+      - name: Rollback not possible
+        if: failure() && steps.current.outputs.version_id == ''
+        run: echo "::error::Smoke test failed and there is no previous version to roll back to. Production may be broken."

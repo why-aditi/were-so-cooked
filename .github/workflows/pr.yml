@@ -1,0 +1,181 @@
+name: PR
+
+on:
+  pull_request:
+    branches: [main]
+
+# A second push to the same PR makes the first run's preview obsolete.
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check:
+    name: Typecheck, lint, test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Lint
+        run: pnpm lint
+      - name: Unit and integration tests
+        run: pnpm test
+
+      # Section 13: the safety eval runs on every PR against recorded outputs,
+      # so it costs no neurons. Pass bar is zero hard violations.
+      #
+      # Not guarded by an `if [ -d ]` any more: the suite exists, and a
+      # conditional would let a deleted or renamed directory pass CI
+      # silently — which is the one failure this job must not have.
+      - name: Safety eval (recorded)
+        run: pnpm vitest run evals/safety
+
+      # The report the run just wrote should match the committed one. A diff
+      # means someone changed the engine or the taxonomy without refreshing
+      # the baseline, and the reviewer should see what moved.
+      - name: Eval report is up to date
+        run: |
+          if ! git diff --quiet -- evals/reports/; then
+            echo "::error::evals/reports/ changed. Run 'pnpm eval' and commit the report."
+            git --no-pager diff -- evals/reports/
+            exit 1
+          fi
+
+  guardrails:
+    name: Config guardrails
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Section 9: DEV_AUTH is a fake login. If it ever reaches staging or
+      # production, anyone can sign in as anyone. This is the single highest
+      # impact check in CI, so it runs standalone and early.
+      - name: DEV_AUTH must not be set outside dev
+        run: |
+          python3 - <<'PY'
+          import json, re, sys
+          raw = open('wrangler.jsonc', encoding='utf-8').read()
+          # strip // comments so the file parses as JSON
+          stripped = re.sub(r'^\s*//.*$', '', raw, flags=re.M)
+          cfg = json.loads(stripped)
+          bad = []
+          for name, block in (cfg.get('env') or {}).items():
+              if 'DEV_AUTH' in (block.get('vars') or {}):
+                  bad.append(name)
+          if bad:
+              print(f"::error::DEV_AUTH is set in: {', '.join(bad)}. It is a fake login and must exist only in the dev block.")
+              sys.exit(1)
+          print("DEV_AUTH is confined to the dev block.")
+          PY
+
+      - name: Required secrets are declared
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          missing=
+          [ -z "$CF_TOKEN" ] && missing="$missing CLOUDFLARE_API_TOKEN"
+          [ -z "$CF_ACCOUNT" ] && missing="$missing CLOUDFLARE_ACCOUNT_ID"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repository secrets:$missing"
+            exit 1
+          fi
+          echo "Deploy secrets present."
+
+      - name: No database_id placeholders
+        run: |
+          if grep -q 'PLACEHOLDER_SET_BY_BOOTSTRAP' wrangler.jsonc; then
+            echo "::error::wrangler.jsonc still has a placeholder database_id. Run pnpm bootstrap and commit the result."
+            exit 1
+          fi
+
+  preview:
+    name: Preview deploy
+    needs: [check, guardrails]
+    runs-on: ubuntu-latest
+    # A fork PR has no access to repository secrets, so the deploy would fail
+    # confusingly rather than usefully. Checks above still run on forks.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build web
+        run: pnpm --filter @cooked/web build || echo "::notice::apps/web has no build yet"
+
+      # A versioned upload does not take production traffic; it returns its own
+      # preview URL. Staging's bindings stay untouched by an unmerged PR.
+      - name: Upload preview version to staging
+        id: deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          out=$(pnpm exec wrangler versions upload --env staging 2>&1 | tee /dev/stderr)
+          url=$(echo "$out" | grep -oE 'https://[a-z0-9-]+\.[a-z0-9-]+\.workers\.dev' | head -1)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Comment the preview URL
+        if: steps.deploy.outputs.url != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = '${{ steps.deploy.outputs.url }}';
+            const marker = '<!-- preview-url -->';
+            const body = `${marker}\n**Preview:** ${url}\n\nHealth: ${url}/healthz`;
+            const { data: comments } = await github.rest.issues.listComments({
+              ...context.repo, issue_number: context.issue.number,
+            });
+            const existing = comments.find((c) => c.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: context.issue.number, body });
+            }
+
+      # Section 13: "End-to-end | Playwright | ... run against the preview
+      # deploy." Against the preview rather than a local dev server, because
+      # the things worth catching here — asset routing, the agent socket
+      # through the real edge, cookies on a real origin — only exist there.
+      #
+      # `E2E_LIVE_AI` is deliberately unset: the chat-turn specs skip, and a
+      # pull request spends no neurons. Section 12's whole allowance is
+      # 10,000 per rolling 24 hours for the entire account.
+      - name: Install Playwright browsers
+        if: steps.deploy.outputs.url != ''
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: End-to-end against the preview
+        if: steps.deploy.outputs.url != ''
+        env:
+          E2E_BASE_URL: ${{ steps.deploy.outputs.url }}
+        run: pnpm e2e
+
+      - name: Upload the Playwright report
+        if: always() && steps.deploy.outputs.url != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-${{ github.run_id }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+

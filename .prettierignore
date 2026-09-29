@@ -1,0 +1,7 @@
+node_modules/
+dist/
+pnpm-lock.yaml
+# The spec is the source of truth and is not ours to reformat.
+*.md
+!apps/**/README.md
+!packages/**/README.md

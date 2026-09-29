@@ -1,0 +1,310 @@
+@import 'tailwindcss';
+
+/*
+ * The visual system from section 10: "Dark mode by default with a light
+ * theme; loud accent colours, chunky sticker-style cards, bold display type."
+ *
+ * The organising idea is a fridge door. Things the agent produces arrive
+ * stuck on: thick ink borders, hard offset shadows, a degree or two of
+ * rotation.
+ *
+ * The rule that makes that mean something is the inverse. Section 10 says
+ * "safety, allergy and data-loss messages are always plain, sentence-case and
+ * emoji-free" — so anything carrying that weight also drops the rotation and
+ * the offset shadow and squares its corners. A card about losing an allergen
+ * should not look like a sticker. `.sticker` and `.sober` below are the two
+ * halves of that, and every card picks one.
+ *
+ * Accents are semantic rather than decorative: marigold acts, chilli warns,
+ * mint confirms, ultramarine is work in progress. A colour never appears
+ * because a card needed some colour.
+ */
+
+@theme {
+  /* Warm purple-brown rather than a neutral near-black: this is a kitchen
+     at night, not a developer tool. */
+  --color-braise: #171316;
+  --color-tin: #241d22;
+  --color-tin-high: #2f262c;
+  --color-chalk: #fbf3e8;
+  --color-chalk-dim: #b9aca4;
+  --color-ink: #12100f;
+
+  --color-marigold: #ffb020;
+  --color-chilli: #ff5941;
+  --color-mint: #4fd8a5;
+  --color-ultramarine: #7b8cff;
+
+  --font-display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+
+  --radius-sticker: 14px;
+}
+
+/*
+ * Semantic layer. Components reference these, never the raw palette, so the
+ * light theme is a re-point rather than a rewrite.
+ */
+:root,
+:root[data-theme='dark'] {
+  --surface-page: var(--color-braise);
+  --surface-raised: var(--color-tin);
+  --surface-high: var(--color-tin-high);
+  --text-primary: var(--color-chalk);
+  --text-muted: var(--color-chalk-dim);
+  --line: color-mix(in oklab, var(--color-chalk) 18%, transparent);
+  /* The hard shadow under a sticker. Solid, never a soft grey blur. */
+  --sticker-shadow: #000;
+  --on-accent: var(--color-ink);
+}
+
+:root[data-theme='light'] {
+  /* Paper, not white: the same warm family as the dark theme's text. */
+  --surface-page: #f6eee2;
+  --surface-raised: #fffaf2;
+  --surface-high: #f0e4d2;
+  --text-primary: #241d22;
+  --text-muted: #6b5b53;
+  --line: color-mix(in oklab, #241d22 22%, transparent);
+  --sticker-shadow: #241d22;
+  --on-accent: var(--color-ink);
+}
+
+/*
+ * Accent text on a dark surface needs to clear 4.5:1, and the raw marigold
+ * and mint do not when used at body size on the raised surface. These are the
+ * text-safe variants; the raw tokens stay for fills and borders, where the
+ * requirement is 3:1 against the adjacent colour.
+ */
+:root,
+:root[data-theme='dark'] {
+  --text-warn: #ff8a76;
+  --text-go: #6fe5b8;
+  --text-act: #ffc14d;
+  --text-work: #a3aeff;
+}
+
+:root[data-theme='light'] {
+  --text-warn: #b4301d;
+  --text-go: #0f6b4a;
+  --text-act: #8a5a00;
+  --text-work: #3b47b8;
+}
+
+@layer base {
+  html {
+    background: var(--surface-page);
+    color-scheme: dark;
+  }
+
+  html[data-theme='light'] {
+    color-scheme: light;
+  }
+
+  body {
+    margin: 0;
+    background: var(--surface-page);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    /* Bricolage is already wide and loud; tight tracking keeps a big
+       headline from drifting apart. */
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+    text-wrap: balance;
+  }
+
+  /* Visible focus is not optional, and it must clear both themes. Marigold
+     against braise is 9.2:1, against paper 2.6:1 — hence the ink ring
+     underneath, which carries the light theme. */
+  :focus-visible {
+    outline: 3px solid var(--color-marigold);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  html[data-theme='light'] :focus-visible {
+    outline-color: #8a5a00;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+
+  /* Prose stays readable: section 10 asks for AA, and long measures are the
+     other half of legibility. */
+  p {
+    max-width: 68ch;
+  }
+}
+
+@layer components {
+  /*
+   * A thing stuck on the fridge. Thick border, hard offset shadow, and a
+   * small rotation set per instance so a thread does not look ruled.
+   */
+  .sticker {
+    background: var(--surface-raised);
+    border: 2px solid var(--text-primary);
+    border-radius: var(--radius-sticker);
+    box-shadow: 4px 4px 0 var(--sticker-shadow);
+    transform: rotate(var(--tilt, 0deg));
+  }
+
+  /*
+   * The other half of the rule. Safety, allergy and data-loss cards sit
+   * square and flat — no tilt, no offset, no rounded corners. They should
+   * read as a different kind of object from the stickers around them.
+   */
+  .sober {
+    background: var(--surface-raised);
+    border: 2px solid var(--text-primary);
+    border-radius: 2px;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .sober-warn {
+    border-color: var(--color-chilli);
+    border-left-width: 6px;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    border: 1.5px solid currentColor;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.5;
+    white-space: nowrap;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.1rem;
+    border-radius: 999px;
+    border: 2px solid var(--text-primary);
+    background: var(--surface-high);
+    color: var(--text-primary);
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 var(--sticker-shadow);
+    transition: transform 120ms ease, box-shadow 120ms ease;
+  }
+
+  /* The press is the motion: it answers an action and shows what changed,
+     which is the only kind of movement section 10 asks for. */
+  .btn:hover {
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 var(--sticker-shadow);
+  }
+
+  .btn:active {
+    transform: translate(3px, 3px);
+    box-shadow: 0 0 0 var(--sticker-shadow);
+  }
+
+  .btn-primary {
+    background: var(--color-marigold);
+    color: var(--color-ink);
+    border-color: var(--color-ink);
+  }
+
+  .btn-danger {
+    background: var(--color-chilli);
+    color: var(--color-ink);
+    border-color: var(--color-ink);
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 3px 3px 0 var(--sticker-shadow);
+  }
+
+  .field {
+    background: var(--surface-page);
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    padding: 0.7rem 0.9rem;
+    width: 100%;
+  }
+
+  .field:focus {
+    border-color: var(--color-marigold);
+  }
+}
+
+@layer utilities {
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Skip link: visible only once focused, which is the whole point. */
+  .skip-link {
+    position: absolute;
+    left: 0.5rem;
+    top: -4rem;
+    z-index: 100;
+    background: var(--color-marigold);
+    color: var(--color-ink);
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    font-weight: 700;
+    transition: top 120ms ease;
+  }
+
+  .skip-link:focus {
+    top: 0.5rem;
+  }
+}
+
+/*
+ * Section 10: "animations respect reduced-motion settings". Everything above
+ * that moves is a response to a click, so this removes the movement and keeps
+ * the state change visible.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .sticker,
+  .btn {
+    transform: none !important;
+  }
+}
