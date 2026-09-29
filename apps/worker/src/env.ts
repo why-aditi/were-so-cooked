@@ -9,6 +9,12 @@ export interface Env {
   ENVIRONMENT: 'dev' | 'staging' | 'production';
   /** Section 9: local fake login. Never set outside dev; CI asserts that. */
   DEV_AUTH?: string;
+  /**
+   * Section 12's AI Gateway. Optional so a Worker whose bootstrap has not
+   * run yet still serves — the calls just go direct and pay full price
+   * rather than failing.
+   */
+  AI_GATEWAY_ID?: string;
 
   /* storage */
   DB: D1Database;

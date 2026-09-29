@@ -866,8 +866,17 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
     const modelId = lowPower ? LOW_POWER_MODEL : CHAT_MODEL;
 
     const system = await this.buildSystemPrompt(latestUserText(this.messages));
+    // Section 12 routes chat through the AI Gateway too. A turn rarely
+    // repeats byte for byte — the pantry slot changes as things are used up
+    // — so this is not where the cache pays off. It matters for the demo
+    // suggestion chips, which send identical context by design and are the
+    // case section 12 calls out.
     const model =
-      this.modelOverride ?? createWorkersAI({ binding: this.env.AI })(modelId as never);
+      this.modelOverride ??
+      createWorkersAI({
+        binding: this.env.AI,
+        ...(this.env.AI_GATEWAY_ID ? { gateway: { id: this.env.AI_GATEWAY_ID } } : {}),
+      })(modelId as never);
 
     const result = streamText({
       model,

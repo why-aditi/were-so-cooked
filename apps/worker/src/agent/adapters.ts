@@ -48,6 +48,28 @@ export interface BudgetGate {
   fractionLeft(): Promise<number>;
 }
 
+/* --------------------------------- gateway --------------------------------- */
+
+/**
+ * Section 12: every Workers AI call goes through the AI Gateway.
+ *
+ * A byte-identical request is served from the cache and never reaches the
+ * model, so it costs no neurons — spike 6 measured a repeat at 177ms against
+ * 2,488ms cold. That is what makes section 12's demo optimisation work: the
+ * suggestion chips send identical context, so the second reviewer to click
+ * one is free.
+ *
+ * One varying token defeats it, including a timestamp. Nothing in the call
+ * paths here injects one, and nothing should start.
+ *
+ * Absent id means no gateway, which happens before `pnpm bootstrap` has run.
+ * Calls then go direct and pay full price rather than failing — a missing
+ * cache should not take the product down.
+ */
+function gatewayOptions(env: Env): { gateway: { id: string } } | undefined {
+  return env.AI_GATEWAY_ID ? { gateway: { id: env.AI_GATEWAY_ID } } : undefined;
+}
+
 /* -------------------------------- Workers AI ------------------------------- */
 
 /** What `env.AI.run` actually returns for a chat model. */
@@ -99,13 +121,10 @@ export function workersAiRunner(env: Env): ModelRunner {
       }));
     }
 
-    // ponytail: no AI Gateway id yet. Spike 6 proved caching works and cuts a
-    // repeat to 0 neurons, which section 12 wants for demo accounts — wire
-    // `{ gateway: { id } }` in once bootstrap.ts's gateway name is a binding
-    // rather than a script constant.
     const result = (await env.AI.run(
       req.model as Parameters<Ai['run']>[0],
       input as never,
+      gatewayOptions(env),
     )) as AiTextResult;
 
     return {
@@ -130,11 +149,11 @@ export function workersAiRunner(env: Env): ModelRunner {
  */
 export function workersAiVision(env: Env): VisionRunner {
   return async (req) => {
-    const result = (await env.AI.run(req.model as Parameters<Ai['run']>[0], {
-      prompt: req.prompt,
-      image: req.image,
-      max_tokens: 1024,
-    } as never)) as { response?: string; usage?: { prompt_tokens?: number; completion_tokens?: number } };
+    const result = (await env.AI.run(
+      req.model as Parameters<Ai['run']>[0],
+      { prompt: req.prompt, image: req.image, max_tokens: 1024 } as never,
+      gatewayOptions(env),
+    )) as { response?: string; usage?: { prompt_tokens?: number; completion_tokens?: number } };
 
     return {
       text: result.response ?? '',

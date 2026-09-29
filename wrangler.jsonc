@@ -33,6 +33,11 @@
 
   "vars": {
     "ENVIRONMENT": "dev",
+    // Section 12: routes every Workers AI call through the gateway so
+    // byte-identical requests are served from cache and cost no neurons.
+    // Spike 6 measured a repeat at 177ms against 2,488ms cold. Created by
+    // scripts/bootstrap.ts; one gateway serves all three environments.
+    "AI_GATEWAY_ID": "cooked-gw",
     // Section 9: fake login for local development only. The staging and
     // production blocks must never set this, and CI fails if they do.
     "DEV_AUTH": "true"
@@ -126,7 +131,10 @@
       },
       "observability": { "enabled": true, "head_sampling_rate": 0.2 },
       "vars": {
-        "ENVIRONMENT": "staging"
+        "ENVIRONMENT": "staging",
+        // Section 12: the shared AI Gateway, so byte-identical calls
+        // are served from cache and cost no neurons (spike 6).
+        "AI_GATEWAY_ID": "cooked-gw"
         // No DEV_AUTH, deliberately.
         //
         // wrangler warns on every build: "The following vars exist at the top
@@ -187,7 +195,10 @@
       },
       "observability": { "enabled": true, "head_sampling_rate": 0.2 },
       "vars": {
-        "ENVIRONMENT": "production"
+        "ENVIRONMENT": "production",
+        // Section 12: the shared AI Gateway, so byte-identical calls
+        // are served from cache and cost no neurons (spike 6).
+        "AI_GATEWAY_ID": "cooked-gw"
         // No DEV_AUTH, deliberately. wrangler warns that top-level vars are
         // not inherited here — that warning is the desired behaviour, not a
         // bug to fix. See the note in env.staging.vars.
