@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Disclaimer, Empty, LoadError, Loading, Screen } from '../components/Screen';
 import { api } from '../lib/api';
+import { formatQuantity } from '../lib/format';
 
 /**
  * Section 10: "Items grouped by category, expiry badges, inline edit, add by
@@ -178,8 +179,7 @@ export function Pantry() {
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                     <span className="font-semibold">{item.displayName}</span>
                     <span style={{ color: 'var(--text-muted)' }}>
-                      {item.quantity}
-                      {item.unit}
+                      {formatQuantity(item.quantity, item.unit)}
                       {item.qtyConfidence === 'approx' ? (
                         <span className="sr-only"> (approximate)</span>
                       ) : null}

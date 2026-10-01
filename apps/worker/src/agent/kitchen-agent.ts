@@ -960,21 +960,16 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
       // The SDK runs tools and loops back for the answer. Bounded so a model
       // that keeps reaching for tools cannot spin through the budget.
       stopWhen: stepCountIs(MAX_STEPS),
-      // And a turn always ends in words. The last allowed step may not call a
-      // tool, and neither may the step after a tool error: retrying the same
-      // failing call is what spent a demo account's whole day on one turn in
-      // production, ending with no reply at all.
+      // And a turn always ends in words: on the last allowed step, or once
+      // retrying is plainly not helping, the model gets no tools and has to
+      // answer. See `mustAnswer` for when that is.
       //
       // The tools are removed from the request, not just declined with
       // `toolChoice: 'none'` — that is a hint the model can ignore, and the
       // SDK does not enforce it. Leaving them out also drops ~2,800 tokens of
       // definitions from a step that cannot use them.
-      prepareStep: ({ stepNumber, steps }) => {
-        const lastFailed = steps.at(-1)?.content.some((part) => part.type === 'tool-error') ?? false;
-        return stepNumber >= MAX_STEPS - 1 || lastFailed
-          ? { activeTools: [], toolChoice: 'none' as const }
-          : {};
-      },
+      prepareStep: ({ stepNumber, steps }) =>
+        mustAnswer(stepNumber, steps) ? { activeTools: [], toolChoice: 'none' as const } : {},
       onFinish: async (event) => {
         const usage: TokenUsage = {
           promptTokens: event.totalUsage?.inputTokens ?? 0,
@@ -1829,6 +1824,28 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
       expiresAt: r.expires_at,
     }));
   }
+}
+
+/**
+ * Whether this step must answer in words rather than call a tool.
+ *
+ * A first tool error is worth one retry: the model sees the validation
+ * message and usually fixes it ("count" sent as "4", say). A second is not —
+ * production's doubled arguments failed identically four times running,
+ * spending a demo account's day on one turn with no reply. Taking the tools
+ * away after the first failure instead left Llama writing the call it wanted
+ * to make as JSON in its reply.
+ */
+export function mustAnswer(
+  stepNumber: number,
+  steps: { content: { type: string }[] }[],
+): boolean {
+  if (stepNumber >= MAX_STEPS - 1) return true;
+  const failures = steps.reduce(
+    (n, step) => n + step.content.filter((part) => part.type === 'tool-error').length,
+    0,
+  );
+  return failures >= 2;
 }
 
 /** Creates the tables and the single profile row. Safe to run repeatedly. */

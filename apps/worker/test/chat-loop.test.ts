@@ -262,10 +262,11 @@ describe('a tool the model calls', () => {
 /* ------------------------------ always answers ----------------------------- */
 
 describe('a turn always ends in words', () => {
-  it('answers after a tool call fails instead of retrying it', async () => {
+  it('lets a failed call be retried once, then makes the model answer', async () => {
     // Production: Llama's doubled arguments made every add_pantry_items call
     // invalid, and the model retried the identical call until the step limit
-    // — the whole demo budget, and no reply at all.
+    // — the whole demo budget, and no reply at all. One corrected retry is
+    // worth allowing; a second failure is not.
     const choices: unknown[] = [];
     const toolCounts: number[] = [];
     const messages = await withAgent(
@@ -274,7 +275,8 @@ describe('a turn always ends in words', () => {
           choices.push(c.toolChoice);
           toolCounts.push(Array.isArray(c.tools) ? c.tools.length : 0);
         },
-        calls('add_pantry_items', { wrong: 'shape' }),
+        calls('add_pantry_items', { wrong: 'shape' }, 'call-1'),
+        calls('add_pantry_items', { wrong: 'shape' }, 'call-2'),
         says('that did not work, sorry'),
       ),
       async (agent) => {
@@ -283,13 +285,29 @@ describe('a turn always ends in words', () => {
       },
     );
 
-    expect(choices).toHaveLength(2);
-    expect(choices[1]).toEqual({ type: 'none' });
-    // Not just discouraged: the answering step is sent no tools at all, so a
-    // model that ignores tool_choice still cannot call one.
-    expect(toolCounts[0]).toBeGreaterThan(0);
-    expect(toolCounts[1]).toBe(0);
+    expect(choices).toHaveLength(3);
+    // After the first failure the tools are still there, for a fix…
+    expect(toolCounts[1]).toBeGreaterThan(0);
+    // …after the second they are gone, not merely discouraged, so even a
+    // model that ignores tool_choice cannot call one.
+    expect(choices[2]).toEqual({ type: 'none' });
+    expect(toolCounts[2]).toBe(0);
     expect(JSON.stringify(messages.at(-1))).toContain('that did not work, sorry');
+  });
+
+  it('accepts numbers sent as strings, the way Llama sends them', async () => {
+    // Production: suggest_recipes {"query": "", "count": "4"} failed the
+    // schema and the reply became the call written out as JSON.
+    const messages = await withAgent(
+      mockModel(calls('suggest_recipes', { query: '', count: '4' }), says('here is what fits')),
+      async (agent) => {
+        await agent.saveMessages(userMessage('what can I make tonight?'));
+        return agent.messages;
+      },
+    );
+    const turn = JSON.stringify(messages.at(-1));
+    expect(turn).toContain('"state":"output-available"');
+    expect(turn).not.toContain('output-error');
   });
 
   it('takes the tools away on the last allowed step', async () => {

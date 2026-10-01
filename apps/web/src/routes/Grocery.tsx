@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Empty, LoadError, Loading, Screen } from '../components/Screen';
 import { api, type GroceryRow } from '../lib/api';
+import { formatAmount } from '../lib/format';
 
 /**
  * Section 10: "Checklist grouped by aisle-style category, share as text."
@@ -35,8 +36,7 @@ function asText(items: GroceryRow[]): string {
     if (inAisle.length === 0) continue;
     lines.push('', aisle);
     for (const item of inAisle) {
-      const amount = item.quantity !== null ? `${item.quantity}${item.unit ?? ''} ` : '';
-      lines.push(`- ${amount}${item.displayName}`);
+      lines.push(`- ${formatAmount(item.quantity, item.unit, item.displayName)}`);
     }
   }
   return lines.join('\n');
@@ -131,8 +131,7 @@ export function Grocery() {
                         color: item.checked ? 'var(--text-muted)' : 'var(--text-primary)',
                       }}
                     >
-                      {item.quantity !== null ? `${item.quantity}${item.unit ?? ''} ` : ''}
-                      {item.displayName}
+                      {formatAmount(item.quantity, item.unit, item.displayName)}
                     </span>
                   </label>
                 </li>
