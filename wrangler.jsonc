@@ -47,7 +47,7 @@
     {
       "binding": "DB",
       "database_name": "cooked-db-dev",
-      "database_id": "PLACEHOLDER_SET_BY_BOOTSTRAP",
+      "database_id": "00fda4af-b483-48f0-ba99-87f2b3552a61",
       "migrations_dir": "migrations"
     }
   ],
@@ -207,7 +207,7 @@
         {
           "binding": "DB",
           "database_name": "cooked-db",
-          "database_id": "PLACEHOLDER_SET_BY_BOOTSTRAP",
+          "database_id": "18bc8cd2-af2b-4e07-a10c-cf6dd3a68988",
           "migrations_dir": "migrations"
         }
       ],
