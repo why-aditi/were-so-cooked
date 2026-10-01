@@ -96,6 +96,16 @@ export const CHAT_BUDGET_EXHAUSTED = prompt(
   'chef is tired 😮‍💨 back at {resetTime}',
 );
 
+/**
+ * Shown instead of a turn when the whole account is out, not this user. That
+ * limit is a rolling 24 hours, so there is no honest time to promise.
+ */
+export const CHAT_ACCOUNT_EXHAUSTED = prompt(
+  'chat.account-exhausted',
+  1,
+  'the whole kitchen is out of gas for a bit 😮‍💨 try again later',
+);
+
 /** Shown when the model errors twice (section 8 fallbacks, section 10 voice). */
 export const CHAT_UPSTREAM_ERROR = prompt(
   'chat.upstream-error',
@@ -103,7 +113,7 @@ export const CHAT_UPSTREAM_ERROR = prompt(
   "we're cooked 💀 (the server, not you). try again?",
 );
 
-export const PROMPTS: Prompt[] = [CHAT_SYSTEM, CHAT_AFTER_TOOL, CHAT_BUDGET_EXHAUSTED, CHAT_UPSTREAM_ERROR];
+export const PROMPTS: Prompt[] = [CHAT_SYSTEM, CHAT_AFTER_TOOL, CHAT_BUDGET_EXHAUSTED, CHAT_ACCOUNT_EXHAUSTED, CHAT_UPSTREAM_ERROR];
 
 /** Fills `{placeholders}`. Anything unmatched is left alone rather than blanked. */
 export function render(p: Prompt, vars: Record<string, string> = {}): string {

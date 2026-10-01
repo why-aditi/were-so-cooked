@@ -1,6 +1,12 @@
 import { AIChatAgent, type OnChatMessageOptions } from '@cloudflare/ai-chat';
 import type { SubstitutionRow, Taxonomy } from '@cooked/safety';
-import { CHAT_AFTER_TOOL, CHAT_BUDGET_EXHAUSTED, CHAT_SYSTEM, render } from '@cooked/prompts';
+import {
+  CHAT_ACCOUNT_EXHAUSTED,
+  CHAT_AFTER_TOOL,
+  CHAT_BUDGET_EXHAUSTED,
+  CHAT_SYSTEM,
+  render,
+} from '@cooked/prompts';
 import { nextUtcMidnight } from '../budget/policy.js';
 import type {
   CookingLogEntry,
@@ -991,10 +997,16 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
     }
     if (!reservation.ok) {
       // The product's copy, not the ledger's ("You have 31 neurons left").
-      return new Response(
-        render(CHAT_BUDGET_EXHAUSTED, { resetTime: await this.budgetResetTime() }),
-        { status: 429, headers: { 'content-type': 'text/plain; charset=utf-8' } },
-      );
+      // Only the per-user caps reset at UTC midnight; the account's limit is
+      // a rolling 24 hours, so it gets no reset time it could not keep.
+      const text =
+        reservation.reason === 'account_rolling'
+          ? CHAT_ACCOUNT_EXHAUSTED.text
+          : render(CHAT_BUDGET_EXHAUSTED, { resetTime: await this.budgetResetTime() });
+      return new Response(text, {
+        status: 429,
+        headers: { 'content-type': 'text/plain; charset=utf-8' },
+      });
     }
 
     // Section 8: below 20% of the cap, chat drops to the cheap model.
