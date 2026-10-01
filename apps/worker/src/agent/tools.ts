@@ -119,6 +119,23 @@ export interface PantryOps {
 
 /* --------------------------------- schemas --------------------------------- */
 
+/**
+ * An optional number that takes Llama 3.3 as it is.
+ *
+ * It sends numeric arguments as strings — `"count": "4"` in production — and a
+ * strict schema turned that into a tool error and a wasted step. It also fills
+ * optional arguments it does not mean to set with `null` or `""`, which must
+ * read as "not given": `z.coerce.number()` made them 0, so renaming a pantry
+ * item would have zeroed its quantity. Anything else non-numeric is still
+ * rejected, and the JSON schema the model sees is the plain number.
+ */
+const NUMERIC = /^\s*-?\d+(\.\d+)?\s*$/;
+export const optionalNumber = (n: z.ZodNumber) =>
+  z.preprocess(
+    (v) => (v === null || v === '' ? undefined : typeof v === 'string' && NUMERIC.test(v) ? Number(v) : v),
+    n.optional(),
+  );
+
 export const AddArgs = z.object({
   text: z
     .string()
@@ -127,18 +144,15 @@ export const AddArgs = z.object({
 });
 
 export const ListArgs = z.object({
-  expiring_within_days: z
-    .number()
-    .positive()
-    .max(365)
-    .optional()
-    .describe('Only return items expiring within this many days.'),
+  expiring_within_days: optionalNumber(z.number().positive().max(365)).describe(
+    'Only return items expiring within this many days.',
+  ),
 });
 
 export const UpdateArgs = z.object({
   id: z.string().min(1).describe('The pantry item id from an earlier tool result.'),
   display_name: z.string().min(1).optional(),
-  quantity: z.number().nonnegative().optional(),
+  quantity: optionalNumber(z.number().nonnegative()),
   unit: Unit.optional(),
   expires_at: z.iso.datetime().optional().describe('ISO date. Marks the expiry as user-set.'),
 });
@@ -150,7 +164,7 @@ export const IdsArgs = z.object({
 export const CookedArgs = z.object({
   recipe_id: z.string().min(1).optional().describe('From an earlier suggestion, if there was one.'),
   recipe_title: z.string().min(1),
-  servings: z.number().positive().max(50).optional().describe('Multiplies the recipe quantities.'),
+  servings: optionalNumber(z.number().positive().max(50)).describe('Multiplies the recipe quantities.'),
 });
 
 export const ProfileArgs = z.object({
@@ -158,19 +172,21 @@ export const ProfileArgs = z.object({
   allergens: z.array(Allergen).optional(),
   exclusions: z.array(z.string().min(1)).optional(),
   cuisines: z.array(z.string().min(1)).optional(),
-  max_cook_minutes: z.number().int().positive().max(600).optional(),
-  servings: z.number().int().positive().max(20).optional(),
+  max_cook_minutes: optionalNumber(z.number().int().positive().max(600)),
+  servings: optionalNumber(z.number().int().positive().max(20)),
   spice_level: z.enum(['none', 'mild', 'medium', 'hot']).optional(),
 });
 
 export const SuggestArgs = z.object({
+  // Empty is allowed: Llama sends "" for "what can I make", and an empty
+  // query is what the 17:00 tonight-suggestion already uses to mean anything
+  // the pantry covers.
   query: z
     .string()
-    .min(1)
     .max(300)
-    .describe('What they asked for, e.g. "something korean" or "use up the palak".'),
-  max_minutes: z.number().int().positive().max(600).optional(),
-  count: z.number().int().positive().max(6).optional().describe('How many to propose. Default 4.'),
+    .describe('What they asked for, e.g. "something korean" or "use up the palak". Empty for anything.'),
+  max_minutes: optionalNumber(z.number().int().positive().max(600)),
+  count: optionalNumber(z.number().int().positive().max(6)).describe('How many to propose. Default 4.'),
 });
 
 export const SubstituteArgs = z.object({
@@ -223,7 +239,7 @@ export const TrendingArgs = z.object({
     .max(200)
     .optional()
     .describe('A dish, ingredient or cuisine to narrow to. Omit for the top of the week.'),
-  count: z.number().int().positive().max(10).optional().describe('How many. Default 5.'),
+  count: optionalNumber(z.number().int().positive().max(10)).describe('How many. Default 5.'),
 });
 
 /** Every gated tool's args, for re-validating an approval before it runs. */

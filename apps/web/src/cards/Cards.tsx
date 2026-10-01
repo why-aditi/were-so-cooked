@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { formatAmount } from '../lib/format';
 
 /**
  * Section 10's six chat cards.
@@ -82,10 +83,7 @@ export function PantryDiffCard({
             <span aria-hidden="true" style={{ color: 'var(--text-go)' }}>
               +
             </span>
-            <span className="font-semibold">
-              {item.quantity}
-              {item.unit} {item.name}
-            </span>
+            <span className="font-semibold">{formatAmount(item.quantity, item.unit, item.name)}</span>
             {item.approximate ? (
               <span className="text-[0.78rem]" style={{ color: 'var(--text-muted)' }}>
                 roughly
