@@ -98,6 +98,8 @@ function generatePrompt(req: GenerateRequest): string {
  * results are still worth showing, and a chat turn should not die because the
  * cheap model emitted a trailing comma.
  */
+const RECIPE_TOKENS = 450;
+
 export async function generateRecipes(
   req: GenerateRequest,
   deps: { model: ModelRunner },
@@ -116,6 +118,9 @@ export async function generateRecipes(
       response = await deps.model({
         model: GENERATE_MODEL,
         messages: [{ role: 'user', content: prompt }],
+        // A recipe with steps runs 300-400 tokens; room for each plus the
+        // wrapper, so the list is never cut off mid-JSON.
+        maxTokens: RECIPE_TOKENS * req.count + 200,
       });
     } catch (e) {
       lastError = e instanceof Error ? e.message : String(e);

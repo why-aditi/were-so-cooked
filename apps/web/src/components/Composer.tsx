@@ -15,12 +15,10 @@ export function Composer({
   onSend,
   onPhoto,
   disabled,
-  busy,
 }: {
   onSend: (text: string) => void;
   onPhoto: (file: File) => void;
   disabled: boolean;
-  busy: boolean;
 }) {
   const [text, setText] = useState('');
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -76,13 +74,9 @@ export function Composer({
       }}
     >
       <div className="mx-auto max-w-[46rem]">
-        <div className="mb-2 flex items-center justify-between gap-3">
+        {/* Progress shows in the thread as a typing bubble, where the reply will land. */}
+        <div className="mb-2 flex items-center gap-3">
           <BudgetMeter />
-          {busy ? (
-            <span className="text-[0.8rem]" style={{ color: 'var(--text-muted)' }} aria-live="polite">
-              thinking…
-            </span>
-          ) : null}
         </div>
 
         {photoError ? (

@@ -69,6 +69,8 @@ export interface SuggestOutcome {
 }
 
 const DEFAULT_LIMIT = 4;
+/** Recipes invented per call when the catalog comes up short. */
+const MAX_GENERATED = 3;
 /** Pull wider than needed, because the safety gate rejects some. */
 const CANDIDATE_MULTIPLIER = 4;
 /** Section 5 names the same window for the pantry slot. */
@@ -252,26 +254,35 @@ export async function suggestRecipes(
   const dropped: { title: string; reason: string }[] = [];
   let modelCalled = false;
 
-  const consider = async (recipe: Recipe, source: 'catalog' | 'generated'): Promise<void> => {
-    const result = await gate(recipe, req.profile, deps);
-    if (!result.ok) {
-      dropped.push({ title: recipe.title, reason: result.reason });
-      return;
+  type Gated = { recipe: Recipe; source: 'catalog' | 'generated'; result: Awaited<ReturnType<typeof gate>> };
+
+  // Gated in parallel — a candidate that needs a swap waits on a model call,
+  // and the next one has no reason to queue behind it — then recorded in
+  // input order, so ties in the ranking still come out the same every time.
+  const considerAll = async (batch: { recipe: Recipe; source: 'catalog' | 'generated' }[]) => {
+    const gated: Gated[] = await Promise.all(
+      batch.map(async (c) => ({ ...c, result: await gate(c.recipe, req.profile, deps) })),
+    );
+    for (const { recipe, source, result } of gated) {
+      if (!result.ok) {
+        dropped.push({ title: recipe.title, reason: result.reason });
+        continue;
+      }
+      const { coverage, have, missing, usesExpiring } = coverageOf(result.recipe, req.pantry, now);
+      suggestions.push({
+        recipe: result.recipe,
+        pantryCoverage: coverage,
+        have,
+        missing,
+        swaps: result.swaps,
+        usesExpiring,
+        source,
+        advisories: result.advisories,
+      });
     }
-    const { coverage, have, missing, usesExpiring } = coverageOf(result.recipe, req.pantry, now);
-    suggestions.push({
-      recipe: result.recipe,
-      pantryCoverage: coverage,
-      have,
-      missing,
-      swaps: result.swaps,
-      usesExpiring,
-      source,
-      advisories: result.advisories,
-    });
   };
 
-  for (const c of candidates) await consider(c.recipe, c.source);
+  await considerAll(candidates);
 
   // Section 5: "Search the catalog **and** generate new options." Generation
   // only runs when the catalog came up short, because it is the half that
@@ -284,16 +295,23 @@ export async function suggestRecipes(
       pantry: req.pantry.filter((i) => i.deletedAt === null).map((i) => i.displayName),
       profileSummary: summariseProfile(req.profile),
       maxMinutes: req.maxMinutes,
-      // One spare, because the gate will reject some.
-      count: Math.min(6, limit - suggestions.length + 1),
+      // One spare, because the gate will reject some — but never more than
+      // three. Output tokens are most of the wait, and three answer "what
+      // can I make tonight" while the user is still looking at the screen.
+      count: Math.min(MAX_GENERATED, limit - suggestions.length + 1),
       avoidTitles: suggestions.map((s) => s.recipe.title),
     });
     usage.promptTokens += generated.usage.promptTokens;
     usage.completionTokens += generated.usage.completionTokens;
 
-    for (const draft of generated.drafts) {
-      await consider(await draftToRecipe(draft, deps.taxonomy, now), 'generated');
-    }
+    await considerAll(
+      await Promise.all(
+        generated.drafts.map(async (draft) => ({
+          recipe: await draftToRecipe(draft, deps.taxonomy, now),
+          source: 'generated' as const,
+        })),
+      ),
+    );
   }
 
   return { suggestions: rankSuggestions(suggestions).slice(0, limit), dropped, usage, modelCalled };

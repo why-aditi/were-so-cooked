@@ -465,6 +465,17 @@ describe('suggest_recipes', () => {
     expect(out.suggestions).toHaveLength(2);
   });
 
+  it('invents at most three on an empty catalog', async () => {
+    // Output tokens are the wait. The default four plus a spare asked for
+    // five full recipes while the user watched a spinner.
+    const generate = fakeGenerate();
+    await suggestRecipes(
+      { query: '', pantry: [], profile: profile() },
+      { ...baseDeps, search: fakeSearch([]), generate },
+    );
+    expect(generate).toHaveBeenCalledWith(expect.objectContaining({ count: 3 }));
+  });
+
   it('passes the time limit down to the catalog query', async () => {
     const search = fakeSearch([]);
     await suggestRecipes(
