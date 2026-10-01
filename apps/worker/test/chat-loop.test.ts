@@ -168,11 +168,15 @@ describe('the context window', () => {
     const names = (tools as { name: string }[]).map((t) => t.name).sort();
     expect(names).toEqual([
       'add_pantry_items',
+      'check_grocery_item',
+      'get_grocery_list',
+      'get_plan',
       'list_pantry',
       'log_cooked',
       'remember_taste',
       'remove_pantry_items',
       'restore_pantry_items',
+      'start_weekly_plan',
       'substitute',
       'suggest_recipes',
       'update_pantry_item',

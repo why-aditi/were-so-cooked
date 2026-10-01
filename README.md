@@ -65,7 +65,7 @@ The one thing it will not do is suggest something you cannot eat. That is enforc
         │  Vectorize  recipes   1024-dim, bge-m3       │
         └──────────────────────────────────────────────┘
 
-  Workflows:  PhotoScanWorkflow ✅   WeeklyPlanWorkflow ⬜   ViralRecipesWorkflow ⬜
+  Workflows:  PhotoScanWorkflow ✅   WeeklyPlanWorkflow ✅   ViralRecipesWorkflow ⬜
 ```
 
 Every user gets one `KitchenAgent` Durable Object, addressed by their user ID. The Worker checks the session on every request and rejects any where the agent name in the URL is not the session's user — that check is the single most important line in the app, and it has [its own test](apps/worker/test/auth.test.ts).
@@ -157,7 +157,7 @@ At most 300 short memories per user, so a brute-force cosine scan over 1024-dim 
 | Test compatibility date trails production's | It tracks the workerd bundled with the test pool, which lags | When the pool ships a newer runtime |
 | Web bundle is 737 kB (211 kB gzipped) | Almost entirely the Agents and AI SDKs | Code-split before launch |
 
-**Known gaps.** `WeeklyPlanWorkflow` and `ViralRecipesWorkflow` are not built, so the plan and grocery screens render a real empty state rather than a fabricated week, and `POST /api/plans` returns a 502 that says so. Three of section 5's twelve tools depend on those Workflows and are deliberately not registered — a tool the model can call but the server cannot answer is worse than a missing one.
+**Known gaps.** `ViralRecipesWorkflow` is not built, so `search_trending` is deliberately not registered — a tool the model can call but the server cannot answer is worse than a missing one. Regenerating a single plan day (`POST /api/plans/:id/days/:day/regenerate`) is not built either; "start again" replans the whole week.
 
 ---
 

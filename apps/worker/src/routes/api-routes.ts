@@ -3,6 +3,7 @@ import {
   GetPantryQuery,
   PatchPantryItemRequest,
   PostPantryRequest,
+  PostPlanRequest,
   PostScanConfirmRequest,
   PutProfileRequest,
 } from '@cooked/shared';
@@ -232,26 +233,38 @@ apiRoutes.get('/api/trending', requireSession, async (c) => {
 
 /* ----------------------------------- plan ---------------------------------- */
 
-/**
- * Section 11: "Current plan with status."
- *
- * Reads the agent's `plans` table. Nothing writes it yet — that is
- * `WeeklyPlanWorkflow`, which is not built — so this returns `null` and the
- * screen shows its empty state. Returning a fabricated week would be worse
- * than an empty one.
- */
+/** Section 11: "Current plan with status." Null until a plan has been started. */
 apiRoutes.get('/api/plans/current', requireSession, async (c) => {
   const plan = await kitchenAgent(c.env, c.get('user').id).currentPlan();
   return c.json({ plan });
 });
 
-apiRoutes.post('/api/plans', requireSession, (c) =>
-  fail(
-    'upstream_error',
-    'Weekly plans need the planning Workflow, which is not built yet.',
-    c.get('requestId'),
-  ),
-);
+/**
+ * Section 11: "Start a weekly plan; returns `planId`."
+ *
+ * 202, because the plan is built by `WeeklyPlanWorkflow` in the background;
+ * the screen polls `/api/plans/current` until the status moves. Starting
+ * again while one is generating returns the running plan's id rather than a
+ * second run.
+ */
+apiRoutes.post('/api/plans', requireSession, async (c) => {
+  const parsed = PostPlanRequest.safeParse(await c.req.json().catch(() => ({})));
+  if (!parsed.success) {
+    return fail('validation_failed', 'Could not read that plan request.', c.get('requestId'));
+  }
+
+  try {
+    const started = await kitchenAgent(c.env, c.get('user').id).startWeeklyPlan(parsed.data);
+    return c.json({ planId: started.planId, status: 'running' as const }, 202);
+  } catch (e) {
+    console.error(JSON.stringify({ event: 'plan_start_failed', error: String(e) }));
+    return fail(
+      'upstream_error',
+      "we're cooked 💀 (the server, not you). try again?",
+      c.get('requestId'),
+    );
+  }
+});
 
 /* --------------------------------- grocery --------------------------------- */
 

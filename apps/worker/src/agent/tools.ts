@@ -1,4 +1,12 @@
-import { Allergen, Diet, type PantryItem, type Profile, type TasteMemory, Unit } from '@cooked/shared';
+import {
+  Allergen,
+  Diet,
+  MealSlot,
+  type PantryItem,
+  type Profile,
+  type TasteMemory,
+  Unit,
+} from '@cooked/shared';
 import { type ToolSet, tool } from 'ai';
 import { z } from 'zod';
 import type {
@@ -7,6 +15,7 @@ import type {
   SuggestOutcome,
   SuggestRequest,
 } from '../recipes/suggest.js';
+import { PLAN_STEPS, type PlanView } from '../plan/record.js';
 import type { RequiredIngredient } from './deduct.js';
 
 /**
@@ -27,9 +36,8 @@ import type { RequiredIngredient } from './deduct.js';
  * Tools talk to `PantryOps`, not to the Durable Object, so a turn can be
  * tested against a fake kitchen with a mocked model.
  *
- * Section 5 lists twelve tools. Ten are here. `start_weekly_plan`, `get_plan`
- * / `get_grocery_list` / `check_grocery_item` and `search_trending` need
- * Workflows that do not exist yet, and a tool the model can call but the
+ * Every section 5 tool is here except `search_trending`, which needs the
+ * catalog `ViralRecipesWorkflow` fills. A tool the model can call but the
  * server cannot answer is worse than a missing one.
  */
 
@@ -79,6 +87,23 @@ export interface PantryOps {
     subject?: string | null;
     recipeId?: string | null;
   }): Promise<TasteMemory>;
+  startWeeklyPlan(options?: {
+    weekStart?: string | undefined;
+    slots?: MealSlot[] | undefined;
+    cuisines?: string[] | undefined;
+  }): Promise<{ planId: string; weekStart: string; alreadyRunning: boolean }>;
+  currentPlan(): Promise<PlanView | null>;
+  groceryItems(): Promise<
+    {
+      id: string;
+      displayName: string;
+      category: string;
+      quantity: number | null;
+      unit: string | null;
+      checked: boolean;
+    }[]
+  >;
+  checkGroceryItem(itemId: string, checked: boolean): Promise<{ id: string; checked: boolean } | null>;
 }
 
 /* --------------------------------- schemas --------------------------------- */
@@ -157,6 +182,27 @@ export const RememberArgs = z.object({
     .optional()
     .describe('The single ingredient it is about, if it is about one. Omit otherwise.'),
   recipe_id: z.string().min(1).optional(),
+});
+
+export const PlanArgs = z.object({
+  week_start: z.iso
+    .date()
+    .optional()
+    .describe('First day of the plan, YYYY-MM-DD. Omit to start today.'),
+  slots: z
+    .array(MealSlot)
+    .min(1)
+    .optional()
+    .describe('Meals to plan. Omit for all four: breakfast, lunch, dinner and treat.'),
+  cuisines: z
+    .array(z.string().min(1))
+    .optional()
+    .describe('Only when the user limits the week to particular cuisines.'),
+});
+
+export const CheckGroceryArgs = z.object({
+  item_id: z.string().min(1).describe('The id from a get_grocery_list result.'),
+  checked: z.boolean().describe('True once bought; false to put it back on the list.'),
 });
 
 /** Every gated tool's args, for re-validating an approval before it runs. */
@@ -475,6 +521,86 @@ export function buildTools(ops: PantryOps): ToolSet {
           recipeId: a.recipe_id ?? null,
         });
         return { ok: true, id: saved.id, kind: saved.kind };
+      },
+    }),
+
+    start_weekly_plan: tool({
+      description:
+        'Start planning a week of meals. Use when the user asks for a meal plan or to plan their ' +
+        'week. It runs in the background and is safety-checked against their profile; tell them ' +
+        'it has started and that it will appear on the plan screen — do not describe meals ' +
+        'yourself.',
+      inputSchema: PlanArgs,
+      execute: async (a) => {
+        const started = await ops.startWeeklyPlan({
+          weekStart: a.week_start,
+          slots: a.slots,
+          cuisines: a.cuisines,
+        });
+        return {
+          planId: started.planId,
+          weekStart: started.weekStart,
+          alreadyRunning: started.alreadyRunning,
+          // The plan progress card's initial state. `plan.progress`
+          // broadcasts tick these off as the Workflow reaches each one.
+          steps: PLAN_STEPS.map((name, i) => ({ name, status: i === 0 ? 'started' : 'pending' })),
+        };
+      },
+    }),
+
+    get_plan: tool({
+      description:
+        "Read this week's meal plan, or check whether one is still being built. Call this " +
+        'rather than recalling a plan from earlier in the chat.',
+      inputSchema: z.object({}),
+      execute: async () => {
+        const plan = await ops.currentPlan();
+        if (!plan) return { exists: false };
+        return {
+          exists: true,
+          status: plan.status,
+          weekStart: plan.weekStart,
+          complete: plan.complete,
+          days: plan.days.map((d) => ({
+            date: d.date,
+            meals: d.meals.map((m) => ({ slot: m.slot, title: m.title, minutes: m.minutes })),
+          })),
+          openSlots: plan.unfilled.map((g) => `${g.date} ${g.slot}`),
+          error: plan.error,
+        };
+      },
+    }),
+
+    get_grocery_list: tool({
+      description:
+        "Read the grocery list for this week's plan: what the plan needs minus what is already " +
+        'in the pantry.',
+      inputSchema: z.object({}),
+      execute: async () => {
+        const items = await ops.groceryItems();
+        return {
+          count: items.length,
+          items: items.map((i) => ({
+            id: i.id,
+            name: i.displayName,
+            quantity: i.quantity,
+            unit: i.unit,
+            aisle: i.category,
+            checked: i.checked,
+          })),
+        };
+      },
+    }),
+
+    check_grocery_item: tool({
+      description:
+        'Tick an item off the grocery list, or untick it. The id comes from get_grocery_list. ' +
+        'This does not add it to the pantry — use add_pantry_items for that.',
+      inputSchema: CheckGroceryArgs,
+      execute: async (a) => {
+        const item = await ops.checkGroceryItem(a.item_id, a.checked);
+        if (!item) return { ok: false, reason: 'No grocery item with that id.' };
+        return { ok: true, item };
       },
     }),
   };

@@ -178,7 +178,8 @@ export type PostScanConfirmResponse = z.infer<typeof PostScanConfirmResponse>;
 
 /** POST /api/plans */
 export const PostPlanRequest = z.object({
-  weekStart: IsoDate,
+  /** Omitted means today, in the profile's time zone. */
+  weekStart: IsoDate.optional(),
   /** Omitted means all four slots (section 2, F8). */
   slots: z.array(MealSlot).min(1).optional(),
   cuisines: z.array(z.string().min(1)).optional(),

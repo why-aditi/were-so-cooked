@@ -160,8 +160,8 @@ test.describe('the demo flow', () => {
   });
 
   test('the plan and grocery screens load', async ({ page }) => {
-    // Honest empty states, not spinners: `WeeklyPlanWorkflow` is not built
-    // and neither screen fabricates a week to look finished.
+    // Both render before any plan exists: an empty state, never a
+    // fabricated week.
     await page.goto('/app/plan');
     await expect(page.getByRole('heading', { name: /this week/i })).toBeVisible();
 

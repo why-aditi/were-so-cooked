@@ -189,3 +189,17 @@ Follow-ups, in order:
 - **Result:** This file, the README, `CHANGELOG.md`, the 300-case safety eval with a committed report, and the Playwright suite. The eval's teeth were verified by mutation: removing the final unconditional `check` in `substitute` fails 217 of 304 cases. The E2E run found a real bug — unhandled errors escaped section 11's error shape.
 
 - **On the last clause of the prompt.** "Verify PROMPTS.md has an entry for every AI-assisted session" assumed the file existed. It did not. It has been created with every session this repo has evidence for; the planning conversation that predates it is entry 0 and is still missing.
+
+---
+
+## Entry 11 — Weekly plan Workflow
+
+- **Date:** 2026-10-01
+- **Tool:** Claude Code (cloud session)
+- **Purpose:** Wire the plan core into `WeeklyPlanWorkflow`, the tools, the route and the screen.
+
+> What else is left from the technical spec doc
+
+> yes, make a branch, do changes, test, make pr, review pr, merge, then start next item
+
+- **Result:** `WeeklyPlanWorkflow` around the existing pure `buildPlan` and `groceryDiff`; the agent's plan row lifecycle; `POST /api/plans`; the four plan and grocery tools; the plan screen and live progress card. One deliberate departure from section 6: a refused budget reservation plans catalog-only instead of deferring, because the catalog costs no neurons. While testing, any Durable Object call from a Workflow step turned out to print a workerd "code had hung" warning in the local test pool — bisected down to a bare `ping()`, and reproduced against the plain `BudgetKeeper` too, so it is the pool rather than this code.

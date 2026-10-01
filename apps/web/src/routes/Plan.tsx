@@ -1,34 +1,52 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Empty, LoadError, Loading, Screen } from '../components/Screen';
-import { api } from '../lib/api';
+import { api, type PlanMealView, type PlanSlot, type PlanView } from '../lib/api';
 
 /**
  * Section 10: "7-day grid, regenerate one day, open recipe, plan status
  * while generating."
  *
- * `WeeklyPlanWorkflow` is not built, so the grid renders from a real (empty)
- * plan rather than a fabricated week. The generating and ready states below
- * are the ones section 10 names, wired to the real status field — when the
- * Workflow lands it writes the row and this screen already knows what to do
- * with it.
+ * Renders the plan `WeeklyPlanWorkflow` wrote, polling only while it is
+ * still being built. A slot nothing safe could fill shows as open rather
+ * than being hidden, so a short week never passes for a whole one.
+ *
+ * ponytail: "regenerate one day" waits on
+ * `POST /api/plans/:id/days/:day/regenerate`, which is not built; "start
+ * again" replans the whole week in the meantime.
  */
 
-const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-const SLOTS = ['breakfast', 'lunch', 'dinner', 'sweet treat'];
+const SLOT_LABEL: Record<PlanSlot, string> = {
+  breakfast: 'breakfast',
+  lunch: 'lunch',
+  dinner: 'dinner',
+  treat: 'sweet treat',
+};
 
-interface Slot {
-  recipeId: string | null;
-  title: string | null;
+/** "mon 6 oct", read in UTC because plan days are calendar dates, not instants. */
+function dayLabel(date: string): string {
+  const d = new Date(`${date}T00:00:00Z`);
+  const weekday = d.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' });
+  const day = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  return `${weekday} ${day}`.toLowerCase();
 }
 
 export function Plan() {
   const queryClient = useQueryClient();
-  const plan = useQuery({ queryKey: ['plan'], queryFn: api.currentPlan, refetchInterval: (query) =>
+  const plan = useQuery({
+    queryKey: ['plan'],
+    queryFn: api.currentPlan,
     // Poll only while a Workflow is actually running.
-    (query.state.data?.plan?.status === 'generating' ? 3_000 : false) });
+    refetchInterval: (query) => (query.state.data?.plan?.status === 'running' ? 3_000 : false),
+  });
 
-  const start = useMutation({ mutationFn: api.startPlan, onSuccess: () => refresh() });
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['plan'] });
+  const start = useMutation({
+    mutationFn: api.startPlan,
+    onSuccess: () => {
+      void refresh();
+      void queryClient.invalidateQueries({ queryKey: ['grocery'] });
+    },
+  });
 
   if (plan.isPending) {
     return (
@@ -47,6 +65,11 @@ export function Plan() {
   }
 
   const current = plan.data?.plan ?? null;
+  const startError = start.isError ? (
+    <p role="alert" className="mt-3 text-[0.9rem]" style={{ color: 'var(--text-warn)' }}>
+      {start.error instanceof Error ? start.error.message : 'That did not start.'}
+    </p>
+  ) : null;
 
   if (!current) {
     return (
@@ -60,61 +83,94 @@ export function Plan() {
           >
             {start.isPending ? 'starting…' : 'plan my week'}
           </button>
-          {start.isError ? (
-            <p role="alert" className="mt-3 text-[0.9rem]" style={{ color: 'var(--text-warn)' }}>
-              {start.error instanceof Error ? start.error.message : 'That did not start.'}
-            </p>
-          ) : null}
+          {startError}
         </Empty>
       </Screen>
     );
   }
 
-  const generating = current.status === 'generating';
-  const grid = (current.plan ?? {}) as Record<string, Record<string, Slot>>;
+  const generating = current.status === 'running';
 
   return (
     <Screen
       title="this week"
-      lede={generating ? 'letting him cook…' : "the week is planned. you're not cooked. dinner is. 🍳"}
+      lede={lede(current)}
       action={
-        <button type="button" className="btn" onClick={() => start.mutate()} disabled={generating}>
+        <button
+          type="button"
+          className="btn"
+          onClick={() => start.mutate()}
+          disabled={generating || start.isPending}
+        >
           start again
         </button>
       }
     >
+      {startError}
+
       {generating ? (
         <p aria-live="polite" className="mb-4" style={{ color: 'var(--text-work)' }}>
           working through the week…
         </p>
       ) : null}
 
+      {current.status === 'failed' ? (
+        <p role="alert" className="mb-4" style={{ color: 'var(--text-warn)' }}>
+          That plan did not come together. Start again to retry.
+        </p>
+      ) : null}
+
+      {current.status === 'ready' && current.unfilled.length > 0 ? (
+        <p className="mb-4 text-[0.92rem]" style={{ color: 'var(--text-muted)' }}>
+          {current.unfilled.length} {current.unfilled.length === 1 ? 'slot has' : 'slots have'}{' '}
+          nothing that fits your profile yet, so{' '}
+          {current.unfilled.length === 1 ? 'it is' : 'they are'} left open.
+          {current.catalogOnly
+            ? ' The AI budget was used up, so this week came from saved recipes only.'
+            : ''}
+        </p>
+      ) : null}
+
       <div className="space-y-3">
-        {DAYS.map((day) => (
-          <section key={day} className="sticker p-3" style={{ ['--tilt' as string]: '0deg' }}>
-            <div className="flex items-baseline justify-between">
-              <h2 className="text-[1.05rem]">{day}</h2>
-              <button type="button" className="btn" disabled={generating}>
-                redo<span className="sr-only"> {day}</span>
-              </button>
-            </div>
+        {current.days.map((day) => (
+          <section key={day.date} className="sticker p-3" style={{ ['--tilt' as string]: '0deg' }}>
+            <h2 className="text-[1.05rem]">{dayLabel(day.date)}</h2>
 
             <ul className="mt-2 grid gap-1.5 p-0 list-none sm:grid-cols-2">
-              {SLOTS.map((slot) => {
-                const filled = grid[day]?.[slot];
-                return (
-                  <li key={slot} className="flex gap-2 text-[0.92rem]">
-                    <span className="w-24 shrink-0" style={{ color: 'var(--text-muted)' }}>
-                      {slot}
-                    </span>
-                    <span>{filled?.title ?? <span style={{ color: 'var(--text-muted)' }}>—</span>}</span>
-                  </li>
-                );
-              })}
+              {current.slots.map((slot) => (
+                <li key={slot} className="flex gap-2 text-[0.92rem]">
+                  <span className="w-24 shrink-0" style={{ color: 'var(--text-muted)' }}>
+                    {SLOT_LABEL[slot]}
+                  </span>
+                  <MealLine meal={day.meals.find((m) => m.slot === slot)} />
+                </li>
+              ))}
             </ul>
           </section>
         ))}
       </div>
     </Screen>
+  );
+}
+
+function lede(plan: PlanView): string {
+  if (plan.status === 'running') return 'letting him cook…';
+  if (plan.status === 'failed') return 'that one did not cook';
+  return "the week is planned. you're not cooked. dinner is. 🍳";
+}
+
+function MealLine({ meal }: { meal: PlanMealView | undefined }) {
+  if (!meal) return <span style={{ color: 'var(--text-muted)' }}>—</span>;
+  return (
+    <span>
+      {meal.title}
+      <span style={{ color: 'var(--text-muted)' }}> · {meal.minutes} min</span>
+      {meal.swaps.length > 0 ? (
+        <span style={{ color: 'var(--text-muted)' }}>
+          {' '}
+          · {meal.swaps.length} {meal.swaps.length === 1 ? 'swap' : 'swaps'}
+        </span>
+      ) : null}
+    </span>
   );
 }
