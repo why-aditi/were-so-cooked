@@ -253,3 +253,25 @@ describe('substitution against the real table', () => {
     }
   });
 });
+
+/* ------------------------------ the SQL files ------------------------------ */
+
+describe('the generated seed SQL', () => {
+  const files = ['010_ingredients.sql', '020_substitutions.sql'];
+
+  // Remote D1 rejects SQL transaction statements, so a wrapped seed loads in
+  // the local test pool — which only reads the INSERT lines — and then fails
+  // `pnpm bootstrap` against a real database.
+  it.each(files)('%s has no transaction statements remote D1 would reject', (file) => {
+    const sql = readFileSync(join(SEED, file), 'utf8');
+    expect(sql).not.toMatch(/^\s*(BEGIN|COMMIT|ROLLBACK|SAVEPOINT|RELEASE)\b/im);
+  });
+
+  it.each(files)('%s is idempotent, every statement an INSERT OR REPLACE', (file) => {
+    const statements = readFileSync(join(SEED, file), 'utf8')
+      .split('\n')
+      .filter((l) => l.trim() && !l.startsWith('--'));
+    expect(statements.length).toBeGreaterThan(0);
+    expect(statements.every((l) => l.startsWith('INSERT OR REPLACE INTO '))).toBe(true);
+  });
+});
