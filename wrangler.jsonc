@@ -111,8 +111,13 @@
 
   // Section 3. 00:15 UTC deletes expired demo accounts; 00:30 Sunday starts the
   // viral pipeline, just after the daily AI budget resets.
+  //
+  // SUN, not 0: Cloudflare rejects day-of-week 0 as "invalid cron string"
+  // [10100], and only after the Worker itself has deployed. The handler in
+  // src/index.ts matches these strings exactly, so change both together;
+  // src/crons.test.ts checks they agree.
   "triggers": {
-    "crons": ["15 0 * * *", "30 0 * * 0"]
+    "crons": ["15 0 * * *", "30 0 * * SUN"]
   },
 
   "env": {
@@ -238,7 +243,7 @@
           "class_name": "ViralRecipesWorkflow"
         }
       ],
-      "triggers": { "crons": ["15 0 * * *", "30 0 * * 0"] }
+      "triggers": { "crons": ["15 0 * * *", "30 0 * * SUN"] }
     }
   }
 

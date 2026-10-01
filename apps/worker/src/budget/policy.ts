@@ -102,7 +102,7 @@ export function rollingWindowStart(now: number): number {
   return now - 24 * 60 * 60 * 1000;
 }
 
-/** Sunday in UTC, which is when section 3's `30 0 * * 0` cron fires. */
+/** Sunday in UTC, which is when section 3's `30 0 * * SUN` cron fires. */
 export function isSundayUtc(now: number): boolean {
   return new Date(now).getUTCDay() === 0;
 }

@@ -197,7 +197,7 @@ describe('starting a run', () => {
   it('starts a run from the Sunday cron', async () => {
     const before = await env.DB.prepare('SELECT COUNT(*) AS n FROM pipeline_runs').first<{ n: number }>();
     const ctx = createExecutionContext();
-    await worker.scheduled(createScheduledController({ cron: '30 0 * * 0' }), env, ctx);
+    await worker.scheduled(createScheduledController({ cron: '30 0 * * SUN' }), env, ctx);
     await waitOnExecutionContext(ctx);
 
     await vi.waitFor(

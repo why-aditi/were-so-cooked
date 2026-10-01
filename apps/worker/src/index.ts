@@ -202,7 +202,7 @@ export default {
       return;
     }
 
-    if (event.cron === '30 0 * * 0') {
+    if (event.cron === '30 0 * * SUN') {
       // Just after the daily budget turns over, as section 3 schedules it.
       // The Workflow records its own outcome in `pipeline_runs`.
       const instance = await env.VIRAL_RECIPES.create({ params: {} });
