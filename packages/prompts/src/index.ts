@@ -70,8 +70,9 @@ export const CHAT_SYSTEM = prompt(
 );
 
 /**
- * Appended to the system prompt for every step after a tool ran: the step
- * whose words the user actually reads. The rules are in `chat.system` too,
+ * Appended to the system prompt for every step after a tool ran, which is
+ * where the words the user reads come from. Worded as a condition, because
+ * that step may still need another tool (add, then suggest). The rules are in `chat.system` too,
  * but 4,000 tokens further up; Llama answered a pantry update with "The
  * function `add_pantry_items` has added two items… The ids for these items
  * are…", in sentence case, repeating the card above it.
@@ -80,9 +81,11 @@ export const CHAT_AFTER_TOOL = prompt(
   'chat.after-tool',
   1,
   [
-    'NOW REPLY. the user already sees the result as a card. in one or two short lowercase',
-    'sentences, react like a friend: no tool or function names, no ids, no restating the card.',
-    'if something failed or needs their input, say that plainly instead.',
+    'WHEN YOU REPLY (instead of calling another tool the request still needs): the user already',
+    'sees each result as a card. react in one or two short sentences, like a friend. no tool or',
+    'function names, no ids, no restating what a card shows: not the recipes, not their',
+    'ingredients, not the items. if something failed or needs their input, say that. safety,',
+    'allergens and lost data stay as the voice rules say: plain, sentence case, no joke.',
   ].join('\n'),
 );
 

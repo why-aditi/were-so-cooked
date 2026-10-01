@@ -994,9 +994,7 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
     const result = streamText({
       model,
       system,
-      // With the tools, so earlier turns' results go through each tool's
-      // toModelOutput too — no item ids for the model to read back out.
-      messages: await convertToModelMessages(this.messages, { tools }),
+      messages: await convertToModelMessages(this.messages),
       tools,
       // The SDK runs tools and loops back for the answer. Bounded so a model
       // that keeps reaching for tools cannot spin through the budget.
@@ -1039,6 +1037,8 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
             userId,
             model: modelId,
             prompt: CHAT_SYSTEM.ref,
+            // Steps after the first also carry this one.
+            afterToolPrompt: (event.steps?.length ?? 1) > 1 ? CHAT_AFTER_TOOL.ref : null,
             promptTokens: usage.promptTokens,
             completionTokens: usage.completionTokens,
             steps: event.steps?.length ?? 1,

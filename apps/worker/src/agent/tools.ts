@@ -377,15 +377,6 @@ export function buildTools(ops: PantryOps): ToolSet {
         const r = await ops.addPantryItems(a.text, { source: 'chat' });
         return { added: r.added.map(brief), unverified: r.unresolved };
       },
-      // The card needs the ids; the model does not, and read them out to the
-      // user ("The ids for these items are…"). It can list_pantry for an id.
-      toModelOutput: ({ output }) => ({
-        type: 'json',
-        value: {
-          added: output.added.map(({ id: _id, ...rest }) => rest),
-          unverified: output.unverified,
-        },
-      }),
     }),
 
     list_pantry: tool({
