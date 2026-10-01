@@ -147,7 +147,7 @@
         {
           "binding": "DB",
           "database_name": "cooked-db-staging",
-          "database_id": "PLACEHOLDER_SET_BY_BOOTSTRAP",
+          "database_id": "ce82ec06-7e09-468a-9938-bfbaea2fef34",
           "migrations_dir": "migrations"
         }
       ],
