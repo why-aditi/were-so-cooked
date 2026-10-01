@@ -246,6 +246,27 @@ describe('the plan row', () => {
     });
   });
 
+  it('shows the plan asked for most recently, not the one for the latest week', async () => {
+    const { agent } = await kitchen();
+    // Next week's plan first, then one from today — what "start again" does
+    // after a plan for next week was made from chat.
+    await runInDurableObject(agent, async (_instance: KitchenAgent, state) => {
+      const insert = (id: string, week: string, at: string, status: string) =>
+        state.storage.sql.exec(
+          `INSERT INTO plans (id, week_start, status, plan, created_at) VALUES (?, ?, ?, '{}', ?)`,
+          id,
+          week,
+          status,
+          at,
+        );
+      insert('next-week', '2026-10-12', '2026-10-01T08:00:00.000Z', 'ready');
+      insert('from-today', '2026-10-05', '2026-10-01T09:00:00.000Z', 'generating');
+    });
+
+    expect((await agent.currentPlan())?.id).toBe('from-today');
+    expect((await agent.snapshot()).activePlanStatus).toBe('running');
+  });
+
   it('does not let a superseded run write over the plan that replaced it', async () => {
     const { agent } = await kitchen();
     const planId = crypto.randomUUID();

@@ -1257,12 +1257,16 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
   }
 
   /**
-   * The plan the screen shows: the newest week's, whether it is still
-   * generating, finished or failed.
+   * The plan the screen shows: the one most recently asked for, whether it
+   * is still generating, finished or failed.
+   *
+   * Newest by creation, not latest week. Someone who planned next week from
+   * chat and then pressed "start again" — which plans from today — is
+   * looking for the plan they just asked for, not the later-dated one.
    */
   async currentPlan(): Promise<PlanView | null> {
     const row = this.ctx.storage.sql
-      .exec('SELECT * FROM plans ORDER BY week_start DESC, created_at DESC LIMIT 1')
+      .exec('SELECT * FROM plans ORDER BY created_at DESC, rowid DESC LIMIT 1')
       .toArray()[0] as unknown as PlanRowSql | undefined;
     if (!row) return null;
 
@@ -1712,7 +1716,7 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
   /** The newest plan's status for the synced state, without parsing its JSON. */
   private activePlanStatus(): PlanStatus | null {
     const row = this.ctx.storage.sql
-      .exec('SELECT status FROM plans ORDER BY week_start DESC, created_at DESC LIMIT 1')
+      .exec('SELECT status FROM plans ORDER BY created_at DESC, rowid DESC LIMIT 1')
       .toArray()[0] as unknown as { status: StoredStatus } | undefined;
     return row ? viewStatus(row.status) : null;
   }

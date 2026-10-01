@@ -197,7 +197,7 @@ export class WeeklyPlanWorkflow extends WorkflowEntrypoint<Env, WeeklyPlanParams
       };
       const model = reservation ? workersAiRunner(this.env) : null;
 
-      const outcome = await buildPlan(
+      const plan = () => buildPlan(
         {
           weekStart,
           slots,
@@ -223,6 +223,24 @@ export class WeeklyPlanWorkflow extends WorkflowEntrypoint<Env, WeeklyPlanParams
             : {}),
         },
       );
+
+      let outcome: Awaited<ReturnType<typeof plan>>;
+      try {
+        outcome = await plan();
+      } catch (e) {
+        // This attempt may already have paid for model calls, and the retry
+        // will pay again. Charge them now as their own ledger entry — a
+        // commit under an unknown id records the spend without touching the
+        // reservation, which the next attempt (or the release on the
+        // failure path) still owns. Otherwise up to four attempts' worth of
+        // real spend would never reach the caps.
+        if (usage.promptTokens + usage.completionTokens > 0) {
+          await budgetKeeper(this.env)
+            .commit(crypto.randomUUID(), { model: GENERATE_MODEL, usage, userId })
+            .catch(() => undefined);
+        }
+        throw e;
+      }
 
       if (reservation) {
         const keeper = budgetKeeper(this.env);
