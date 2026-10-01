@@ -189,19 +189,10 @@ function useSyncTimeZone() {
   useEffect(() => {
     const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     if (!zone || zone === 'UTC') return;
-    let cancelled = false;
-    void (async () => {
-      try {
-        const { profile } = await api.profile();
-        if (cancelled || profile.timeZone !== 'UTC') return;
-        const { updatedAt: _updatedAt, ...rest } = profile;
-        await api.saveProfile({ ...rest, timeZone: zone });
-      } catch {
-        // Nothing breaks in UTC; it is only less local. Try again next load.
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    // The server applies it only while the profile is still UTC, in one
+    // write that touches nothing else.
+    api.adoptTimeZone(zone).catch(() => {
+      // Nothing breaks in UTC; it is only less local. Try again next load.
+    });
   }, []);
 }

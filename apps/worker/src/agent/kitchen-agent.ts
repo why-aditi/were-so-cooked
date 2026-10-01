@@ -1852,6 +1852,21 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
     return this.getProfile();
   }
 
+  /**
+   * Sets the time zone only while it is still the UTC default, and touches
+   * nothing else. One conditional UPDATE, not a read-then-replace, so it
+   * cannot put back an older copy of the profile over an allergy saved a
+   * moment earlier.
+   */
+  async adoptTimeZone(zone: string): Promise<Profile> {
+    this.ctx.storage.sql.exec(
+      `UPDATE profile SET time_zone = ?, updated_at = ? WHERE id = 1 AND time_zone = 'UTC'`,
+      zone,
+      nowIso(),
+    );
+    return this.getProfile();
+  }
+
   /* --------------------------------- state --------------------------------- */
 
   /** The small object section 5 syncs to every open tab. */

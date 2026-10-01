@@ -8,6 +8,7 @@ describe('toolsFor', () => {
       'list_pantry',
       'update_pantry_item',
       'remove_pantry_items',
+      'update_profile',
     ]);
   });
 
@@ -21,6 +22,18 @@ describe('toolsFor', () => {
     const tools = toolsFor('but im vegetarian');
     expect(tools).toContain('update_profile');
     expect(tools).toContain('suggest_recipes');
+  });
+
+  it('can always save a restriction, however it is phrased', () => {
+    // Review: "can't have" matched no group and fell to the pantry tools;
+    // a phone's curly apostrophe missed "don't".
+    for (const text of ["I can't have gluten", 'I don\u2019t eat beef', 'no nuts please']) {
+      expect(toolsFor(text) ?? ['update_profile']).toContain('update_profile');
+    }
+  });
+
+  it('lets a meal question read the plan', () => {
+    expect(toolsFor("what's for dinner tomorrow")).toContain('get_plan');
   });
 
   it('routes cooking something to log_cooked', () => {

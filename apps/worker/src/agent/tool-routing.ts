@@ -12,15 +12,27 @@
  * request costs what it always did, it never loses the tool it needed.
  */
 
-/** Always offered: the pantry is the thing every flow reads or writes. */
-const CORE = ['add_pantry_items', 'list_pantry', 'update_pantry_item', 'remove_pantry_items'];
+/**
+ * Always offered. The pantry is the thing every flow reads or writes. And
+ * update_profile is how an allergy gets saved: a missed keyword must never
+ * leave "i can't have gluten" with no way to record it, so it is not left
+ * to the word lists below.
+ */
+const CORE = [
+  'add_pantry_items',
+  'list_pantry',
+  'update_pantry_item',
+  'remove_pantry_items',
+  'update_profile',
+];
 
 const GROUPS: { words: RegExp; tools: string[] }[] = [
   {
     // Food ideas, and the follow-ups that come with them.
     words:
       /\b(make|cook|cooking|recipes?|suggest\w*|ideas?|dinner|lunch|breakfast|snack|eat|tonight|today|meals?|hungry|khana|dish(es)?|swap|substitute|instead|vegan|vegetarian|veg|trending|viral)\b/i,
-    tools: ['suggest_recipes', 'substitute', 'search_trending', 'remember_taste'],
+    // get_plan too: "what's for dinner tomorrow" may already be planned.
+    tools: ['suggest_recipes', 'substitute', 'search_trending', 'remember_taste', 'get_plan'],
   },
   {
     // Something was cooked or eaten, which deducts the pantry.
@@ -30,8 +42,8 @@ const GROUPS: { words: RegExp; tools: string[] }[] = [
   {
     // Who they are: diets, allergies, preferences.
     words:
-      /\b(i'?m|i am|allerg\w*|vegan|vegetarian|veg|jain|halal|diet|spic\w*|servings?|people|profile|don'?t eat|can'?t eat|hate|love|like|dislike)\b/i,
-    tools: ['update_profile', 'remember_taste'],
+      /\b(i'?m|i am|allerg\w*|intoleran\w*|gluten|lactose|dairy|nuts?|peanuts?|celiac|coeliac|avoid|vegan|vegetarian|veg|jain|halal|diet|spic\w*|servings?|people|profile|don'?t|can'?t|cannot|hate|love|like|dislike)\b/i,
+    tools: ['remember_taste'],
   },
   {
     // The week and the shop.
@@ -45,7 +57,9 @@ const GROUPS: { words: RegExp; tools: string[] }[] = [
 ];
 
 /** The tool names to offer, or null for all of them. */
-export function toolsFor(userText: string): string[] | null {
+export function toolsFor(rawText: string): string[] | null {
+  // Phones type a curly apostrophe; "don’t" should read as "don't".
+  const userText = rawText.replace(/[\u2018\u2019]/g, "'");
   const picked = new Set<string>();
   for (const group of GROUPS) {
     if (group.words.test(userText)) for (const t of group.tools) picked.add(t);
