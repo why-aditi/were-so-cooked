@@ -33,7 +33,7 @@ import { EXTRACT_MODEL, FILTER_MODEL, type ExtractResult, type FilterResult } fr
  */
 
 /** Section 6: "Target: up to 30 new trending recipes per run." */
-const MAX_RECIPES = 30;
+export const MAX_RECIPES = 30;
 
 /** Section 6: "`trending_until` = now + 21 days". */
 const TRENDING_DAYS = 21;
@@ -43,7 +43,7 @@ const TRENDING_DAYS = 21;
  * column. Sixty failures all say the same thing anyway; twenty is enough to
  * see what went wrong.
  */
-const MAX_ERRORS = 20;
+export const MAX_ERRORS = 20;
 
 /**
  * What happened to a video, written to `seen_videos.outcome`.
@@ -172,6 +172,87 @@ export async function draftToTrendingRecipe(
   return { ok: true, recipe: parsed.data };
 }
 
+/* --------------------------------- phases --------------------------------- */
+
+/*
+ * The run in pieces. `runViralPipeline` below composes them in one call, which
+ * is what the tests drive; `ViralRecipesWorkflow` composes the same pieces
+ * across steps, so a failed extraction reruns one video rather than the run
+ * (section 6). One set of rules, two schedules.
+ */
+
+/** Videos the relevance filter threw out, as their `seen_videos` outcome. */
+export function filteredOut(
+  candidates: VideoCandidate[],
+  keep: VideoCandidate[],
+): [string, VideoOutcome][] {
+  const kept = new Set(keep.map((v) => v.videoId));
+  return candidates
+    .filter((v) => !kept.has(v.videoId))
+    .map((v) => [v.videoId, 'filtered'] as [string, VideoOutcome]);
+}
+
+/** One video's extraction, judged: a storable recipe, or why not. */
+export type JudgedVideo =
+  | { videoId: string; outcome: 'built'; recipe: Recipe }
+  | { videoId: string; outcome: 'failed' | 'held'; error: string };
+
+export async function judgeExtraction(
+  video: VideoCandidate,
+  result: Pick<ExtractResult, 'draft' | 'error'>,
+  taxonomy: Taxonomy,
+  now: number,
+  trendingDays?: number,
+): Promise<JudgedVideo> {
+  if (!result.draft) {
+    return {
+      videoId: video.videoId,
+      outcome: 'failed',
+      error: `extract ${video.videoId}: ${result.error ?? 'no draft'}`,
+    };
+  }
+  const recipe = await draftToTrendingRecipe(result.draft, video, taxonomy, now, trendingDays);
+  if (!recipe.ok) {
+    return { videoId: video.videoId, outcome: 'held', error: `held ${video.videoId}: ${recipe.reason}` };
+  }
+  return { videoId: video.videoId, outcome: 'built', recipe: recipe.recipe };
+}
+
+/**
+ * Section 6's dedupe, against the catalog and within the run.
+ *
+ * `known` is the authoritative half: `recipes.content_hash` is UNIQUE, so a
+ * hash already in D1 cannot be inserted whatever an embedding later says
+ * about similarity.
+ *
+ * ponytail: the "similarity above 0.92" half of that step is not here. It
+ * needs a `bge-m3` embedding per recipe and a Vectorize query, and spike 1
+ * measured 68 seconds before a vector is queryable — so a run cannot even
+ * dedupe against its own earlier writes. Add it as another input beside
+ * `known` once the index has content, and keep D1 the authority either way.
+ */
+export function dedupe(
+  built: { videoId: string; recipe: Recipe }[],
+  known: Set<string>,
+): { recipes: Recipe[]; duplicates: number; outcomes: [string, VideoOutcome][] } {
+  const recipes: Recipe[] = [];
+  const outcomes: [string, VideoOutcome][] = [];
+  const inRun = new Set<string>();
+  let duplicates = 0;
+
+  for (const { videoId, recipe } of built) {
+    if (known.has(recipe.contentHash) || inRun.has(recipe.contentHash)) {
+      duplicates += 1;
+      outcomes.push([videoId, 'duplicate']);
+      continue;
+    }
+    inRun.add(recipe.contentHash);
+    recipes.push(recipe);
+    outcomes.push([videoId, 'added']);
+  }
+  return { recipes, duplicates, outcomes };
+}
+
 /* ---------------------------------- run ----------------------------------- */
 
 export async function runViralPipeline(
@@ -189,9 +270,8 @@ export async function runViralPipeline(
 
   const filtered = await deps.filter(discovered.candidates);
   errors.push(...filtered.errors);
-  const kept = new Set(filtered.keep.map((v) => v.videoId));
-  for (const video of discovered.candidates) {
-    if (!kept.has(video.videoId)) outcomes.set(video.videoId, 'filtered');
+  for (const [id, outcome] of filteredOut(discovered.candidates, filtered.keep)) {
+    outcomes.set(id, outcome);
   }
 
   // Videos past the cap are left out of `seen_videos` entirely. They were
@@ -200,72 +280,38 @@ export async function runViralPipeline(
   const queue = filtered.keep.slice(0, maxRecipes);
 
   const extractUsage: TokenUsage = { promptTokens: 0, completionTokens: 0 };
-  const built: { video: VideoCandidate; recipe: Recipe }[] = [];
+  const built: { videoId: string; recipe: Recipe }[] = [];
   let extracted = 0;
 
   for (const video of queue) {
     const result = await deps.extract(video);
     extractUsage.promptTokens += result.usage.promptTokens;
     extractUsage.completionTokens += result.usage.completionTokens;
+    if (result.draft) extracted += 1;
 
-    if (!result.draft) {
-      outcomes.set(video.videoId, 'failed');
-      errors.push(`extract ${video.videoId}: ${result.error ?? 'no draft'}`);
-      continue;
+    const judged = await judgeExtraction(video, result, deps.taxonomy, now, options.trendingDays);
+    if (judged.outcome === 'built') {
+      built.push({ videoId: judged.videoId, recipe: judged.recipe });
+    } else {
+      outcomes.set(judged.videoId, judged.outcome);
+      errors.push(judged.error);
     }
-    extracted += 1;
-
-    const recipe = await draftToTrendingRecipe(
-      result.draft,
-      video,
-      deps.taxonomy,
-      now,
-      options.trendingDays,
-    );
-    if (!recipe.ok) {
-      outcomes.set(video.videoId, 'held');
-      errors.push(`held ${video.videoId}: ${recipe.reason}`);
-      continue;
-    }
-    built.push({ video, recipe: recipe.recipe });
   }
 
-  // One lookup for the whole run rather than one per recipe. Section 6 dedupes
-  // on the hash before embedding, and this is the half of that which is
-  // authoritative: `recipes.content_hash` is UNIQUE, so a hash already in D1
-  // cannot be inserted whatever the embedding later says about similarity.
-  //
-  // ponytail: the "similarity above 0.92" half of that step is not here. It
-  // needs a `bge-m3` embedding per recipe and a Vectorize query, and spike 1
-  // measured 68 seconds before a vector is queryable — so a run cannot even
-  // dedupe against its own earlier writes. Add it as another injected port
-  // beside `knownHashes` once the index has content, and keep D1 the
-  // authority either way.
+  // One lookup for the whole run rather than one per recipe.
   const known = await deps.knownHashes(built.map((b) => b.recipe.contentHash));
-  const recipes: Recipe[] = [];
-  const inRun = new Set<string>();
-  let duplicates = 0;
-
-  for (const { video, recipe } of built) {
-    if (known.has(recipe.contentHash) || inRun.has(recipe.contentHash)) {
-      duplicates += 1;
-      outcomes.set(video.videoId, 'duplicate');
-      continue;
-    }
-    inRun.add(recipe.contentHash);
-    recipes.push(recipe);
-    outcomes.set(video.videoId, 'added');
-  }
+  const deduped = dedupe(built, known);
+  for (const [id, outcome] of deduped.outcomes) outcomes.set(id, outcome);
 
   return {
-    recipes,
+    recipes: deduped.recipes,
     seenVideos: [...outcomes].map(([videoId, outcome]) => ({ videoId, firstSeen, outcome })),
     counts: {
       found: discovered.found,
       filtered: filtered.keep.length,
       extracted,
-      added: recipes.length,
-      duplicates,
+      added: deduped.recipes.length,
+      duplicates: deduped.duplicates,
       neurons:
         neuronsFor(FILTER_MODEL, filtered.usage) + neuronsFor(EXTRACT_MODEL, extractUsage),
       errors: errors.slice(0, MAX_ERRORS),

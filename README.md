@@ -65,7 +65,7 @@ The one thing it will not do is suggest something you cannot eat. That is enforc
         │  Vectorize  recipes   1024-dim, bge-m3       │
         └──────────────────────────────────────────────┘
 
-  Workflows:  PhotoScanWorkflow ✅   WeeklyPlanWorkflow ✅   ViralRecipesWorkflow ⬜
+  Workflows:  PhotoScanWorkflow ✅   WeeklyPlanWorkflow ✅   ViralRecipesWorkflow ✅
 ```
 
 Every user gets one `KitchenAgent` Durable Object, addressed by their user ID. The Worker checks the session on every request and rejects any where the agent name in the URL is not the session's user — that check is the single most important line in the app, and it has [its own test](apps/worker/test/auth.test.ts).
@@ -152,12 +152,12 @@ At most 300 short memories per user, so a brute-force cosine scan over 1024-dim 
 | Shortcut | Why | When to revisit |
 | --- | --- | --- |
 | 810 seed ingredients, not the 1,500 the spec asked for | Padding the list would triple the review burden without adding coverage; every entry was checked by hand and the uncertain ones are flagged in [`seed/REVIEW.md`](seed/REVIEW.md) | Section 15 grows the taxonomy from logged unknown ingredients, which is better data than guessing |
-| Recipe search is SQL over D1, not Vectorize | Semantic search needs an embedding per recipe, and the only thing that writes those is `ViralRecipesWorkflow` | Both sit behind one `RecipeSearch` interface; swap the implementation when the pipeline lands |
+| Recipe search is SQL over D1, not Vectorize | Semantic search needs an embedding per recipe, and nothing writes those yet | Both sit behind one `RecipeSearch` interface; add the embed step to `ViralRecipesWorkflow` and swap the implementation |
 | Four-chars-per-token heuristic for the context window | A real tokenizer is a WASM blob for a number that only has to be right enough to trim on | If a turn ever actually overflows 24K |
 | Test compatibility date trails production's | It tracks the workerd bundled with the test pool, which lags | When the pool ships a newer runtime |
 | Web bundle is 737 kB (211 kB gzipped) | Almost entirely the Agents and AI SDKs | Code-split before launch |
 
-**Known gaps.** `ViralRecipesWorkflow` is not built, so `search_trending` is deliberately not registered — a tool the model can call but the server cannot answer is worse than a missing one. Regenerating a single plan day (`POST /api/plans/:id/days/:day/regenerate`) is not built either; "start again" replans the whole week.
+**Known gaps.** Vectorize is provisioned but unused: recipe search is SQL over D1, and `ViralRecipesWorkflow` dedupes on content hash only, without the 0.92 similarity check. Regenerating a single plan day (`POST /api/plans/:id/days/:day/regenerate`) is not built either; "start again" replans the whole week.
 
 ---
 

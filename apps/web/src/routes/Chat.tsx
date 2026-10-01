@@ -273,7 +273,7 @@ function ToolCard({
     );
   }
 
-  if (name === 'suggest_recipes') {
+  if (name === 'suggest_recipes' || name === 'search_trending') {
     const suggestions = (output.suggestions as never[]) ?? [];
     const hidden = (output.hidden as { title: string; reason: string }[]) ?? [];
     return (

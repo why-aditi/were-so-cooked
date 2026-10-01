@@ -203,3 +203,17 @@ Follow-ups, in order:
 > yes, make a branch, do changes, test, make pr, review pr, merge, then start next item
 
 - **Result:** `WeeklyPlanWorkflow` around the existing pure `buildPlan` and `groceryDiff`; the agent's plan row lifecycle; `POST /api/plans`; the four plan and grocery tools; the plan screen and live progress card. One deliberate departure from section 6: a refused budget reservation plans catalog-only instead of deferring, because the catalog costs no neurons. While testing, any Durable Object call from a Workflow step turned out to print a workerd "code had hung" warning in the local test pool — bisected down to a bare `ping()`, and reproduced against the plain `BudgetKeeper` too, so it is the pool rather than this code.
+
+---
+
+## Entry 12 — Bootstrap fixes and the trending pipeline
+
+- **Date:** 2026-10-01
+- **Tool:** Claude Code (cloud session)
+- **Purpose:** Fix what a first real `pnpm bootstrap` exposed, then wire `ViralRecipesWorkflow`.
+
+> (pasted output of `pnpm bootstrap --env production`, twice)
+
+> 1 check failed in pr2
+
+- **Result:** PR #2: the seed SQL no longer wraps itself in a transaction remote D1 rejects, the R2 lifecycle step reads before it writes, and failed steps log wrangler's actual error rather than its bug-report footer. Then `ViralRecipesWorkflow`: the pure pipeline split into phases so the Workflow can run one retried step per video, a YouTube Data API adapter, the Sunday cron, `POST /admin/pipeline/run`, and the `search_trending` tool. Vectorize is still unused and is the next item.

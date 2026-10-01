@@ -1,4 +1,4 @@
-import type { BudgetStatus } from '../budget/policy.js';
+import type { BudgetStatus, Pool } from '../budget/policy.js';
 import type { TokenUsage } from '../budget/rates.js';
 import type { Env } from '../env.js';
 import type { VisionRunner } from '../photo/extract.js';
@@ -168,11 +168,20 @@ export function workersAiVision(env: Env): VisionRunner {
 /* ------------------------------- BudgetKeeper ------------------------------ */
 
 interface KeeperStub {
-  reserve(req: { userId: string; estimate: number; isDemo?: boolean }): Promise<
+  reserve(req: {
+    userId: string;
+    estimate: number;
+    isDemo?: boolean;
+    pool?: Pool;
+    ttlMs?: number;
+  }): Promise<
     | { ok: true; reservationId: string; estimate: number }
     | { ok: false; reason: string; message: string; left: number }
   >;
-  commit(id: string, call: { model: string; usage: TokenUsage; userId?: string }): Promise<unknown>;
+  commit(
+    id: string,
+    call: { model: string; usage: TokenUsage; userId?: string; pool?: Pool },
+  ): Promise<unknown>;
   release(id: string): Promise<unknown>;
   status(userId: string, isDemo: boolean): Promise<BudgetStatus>;
 }

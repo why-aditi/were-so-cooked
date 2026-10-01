@@ -10,7 +10,8 @@ Nothing is released yet, so everything sits under Unreleased. The first tag will
 
 - **Frontend.** React 19 SPA on Vite, Tailwind and React Router: landing page, app shell with a bottom tab bar on phones and a rail from `md`, and every screen in section 10 — chat, pantry, plan, grocery, trending, inbox, profile and pipeline status. Dark theme by default with a light theme.
 - **Chat.** `KitchenAgent` built on `AIChatAgent` from `@cloudflare/ai-chat`, with the SDK's message persistence, resumable streaming, WebSocket transport and human-in-the-loop approvals. All six of section 10's card types render from structured tool output.
-- **Tools.** Every section 5 tool except `search_trending`, each with a Zod input schema. `log_cooked` and `update_profile` are gated behind the SDK's approval flow.
+- **Tools.** Every section 5 tool, each with a Zod input schema. `log_cooked` and `update_profile` are gated behind the SDK's approval flow.
+- **Trending recipes.** `ViralRecipesWorkflow`: open the run, reserve the Sunday pool, discover on YouTube, filter ten to a step, extract one video per step, then dedupe, store and close the run. Every stored recipe credits its creator and links the video; tags are computed by the safety engine; recipes with unknown ingredients are held back. Started by the Sunday cron or `POST /admin/pipeline/run` behind `ADMIN_TOKEN`. `search_trending` returns this week's recipes that fit the profile, gated with the curated swap table and no model.
 - **Weekly plans.** `WeeklyPlanWorkflow`: load context, reserve, build, grocery diff, save. Safety-gated, no repeats within 7 days, soon-to-expire stock first, the cook-time limit. A slot nothing safe fits stays open and is reported rather than filled with an invented meal. `POST /api/plans`, the plan screen, the grocery list, a plan-ready inbox item, and live `plan.progress` ticks on the chat card. When the budget refuses the reservation the run goes ahead catalog-only instead of being deferred, because the catalog costs no neurons.
 - **Safety engine.** `packages/safety`: `check()`, `substitute()`, 18 diets, 14 allergens, severity levels. Pure TypeScript, no I/O. The invariant — substitute output either passes check or is dropped — holds by construction and is covered by property tests.
 - **Taxonomy.** 810 hand-reviewed ingredients with aliases including romanized Hindi, plus 92 curated substitutions, authored as TSV and built into JSON and SQL.
@@ -53,7 +54,7 @@ Nothing is released yet, so everything sits under Unreleased. The first tag will
 
 ### Known gaps
 
-- `ViralRecipesWorkflow` is not built, so `search_trending` is deliberately unregistered.
+- Vectorize is provisioned but unused: no embeddings are written, recipe search is SQL over D1, and the viral pipeline dedupes on content hash only.
 - Regenerating a single plan day is not built; "start again" replans the whole week.
 - Vectorize recipe search is behind a `RecipeSearch` interface but unimplemented — nothing writes embeddings yet.
 - Not deployed, so the README has no live URL.

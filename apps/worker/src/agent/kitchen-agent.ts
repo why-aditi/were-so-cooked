@@ -7,9 +7,11 @@ import type {
   PantryItem,
   PlanStatus,
   Profile,
+  Recipe,
   RecipeIngredient,
   Scan,
   ScanItem,
+  Swap,
   TasteMemory,
   Unit,
 } from '@cooked/shared';
@@ -35,6 +37,7 @@ import {
   type SuggestDeps,
   type SuggestOutcome,
   type SuggestRequest,
+  gate,
   substituteRecipe,
   suggestRecipes,
 } from '../recipes/suggest.js';
@@ -685,6 +688,69 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
     return outcome;
   }
 
+
+  /**
+   * Section 5's `search_trending`: this week's viral recipes that fit the
+   * profile.
+   *
+   * Gated with the curated swap table and nothing else — no model. A search
+   * should not spend neurons, and a dish only an LLM swap could rescue can
+   * still be fitted on request through `substitute`.
+   */
+  async searchTrending(req: { query?: string | undefined; limit?: number | undefined }): Promise<{
+    results: {
+      recipe: Recipe;
+      swaps: Swap[];
+      have: string[];
+      missing: string[];
+      /** The safety engine's warnings, passed through as suggest_recipes does. */
+      advisories: string[];
+    }[];
+    hidden: { title: string; reason: string }[];
+  }> {
+    const limit = Math.min(10, Math.max(1, req.limit ?? 5));
+    const [taxonomy, substitutions, profile, pantry] = await Promise.all([
+      this.taxonomy(),
+      this.substitutionRows(),
+      this.getProfile(),
+      this.listPantry(),
+    ]);
+    const found = await d1RecipeSearch(this.env.DB).find({
+      ...(req.query ? { text: req.query } : {}),
+      trendingOnly: true,
+      // Some will not fit; ask for spares.
+      limit: limit * 3,
+    });
+
+    const stocked = new Set(pantry.map((i) => i.canonicalId).filter(Boolean));
+    const results = [];
+    const hidden: { title: string; reason: string }[] = [];
+    for (const recipe of found) {
+      if (results.length >= limit) break;
+      const gated = await gate(recipe, profile, {
+        taxonomy,
+        substitutions,
+        dislikes: dislikesFrom(this.tasteMemories()),
+      });
+      if (!gated.ok) {
+        hidden.push({ title: recipe.title, reason: gated.reason });
+        continue;
+      }
+      const have: string[] = [];
+      const missing: string[] = [];
+      for (const i of gated.recipe.ingredients) {
+        (i.canonicalId && stocked.has(i.canonicalId) ? have : missing).push(i.name);
+      }
+      results.push({
+        recipe: gated.recipe,
+        swaps: gated.swaps,
+        have,
+        missing,
+        advisories: gated.advisories,
+      });
+    }
+    return { results, hidden };
+  }
 
   /* ------------------------------ taste memory ------------------------------ */
 

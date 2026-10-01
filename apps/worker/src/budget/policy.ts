@@ -43,6 +43,13 @@ export const COMBINED_USERS_SUNDAY = 6_000;
 /** Section 12: uncommitted reservations expire after 5 minutes. */
 export const RESERVATION_TTL_MS = 5 * 60 * 1000;
 
+/**
+ * The longest a caller may ask a reservation to live. A viral run holds its
+ * pool across thirty extraction steps; two hours covers that with retries and
+ * still lets go of the pool the same day if the run dies.
+ */
+export const MAX_RESERVATION_TTL_MS = 2 * 60 * 60 * 1000;
+
 export const VIRAL_USER_ID = 'system:viral';
 
 export type Pool = 'user' | 'viral';

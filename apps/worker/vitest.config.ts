@@ -37,6 +37,7 @@ export default defineConfig({
           TEST_SEED_SQL: seedSql,
           TEST_SUBSTITUTIONS_SQL: substitutionsSql,
           SESSION_SIGNING_KEY: 'test-signing-key-not-a-real-secret',
+          ADMIN_TOKEN: 'test-admin-token-not-a-real-secret',
         },
       },
     }),

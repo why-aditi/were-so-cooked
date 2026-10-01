@@ -15,7 +15,7 @@ Live runs are also a manual GitHub Actions job (`.github/workflows/eval-live.yml
 | --- | --- | --- | --- |
 | `safety/` | 300 profile × request | Zero hard violations | Every PR, recorded. Live on demand |
 | Plan quality | 20 profiles | Repeat rate 0, judged coverage | Not built yet |
-| Viral extraction | 30 labelled descriptions | 90% ingredient accuracy | Not built — needs `ViralRecipesWorkflow` |
+| Viral extraction | 30 labelled descriptions | 90% ingredient accuracy | Not built yet |
 | Photo extraction | 20 labelled photos | 80% precision and recall | Not built — needs labelled photos |
 
 ## What "recorded" means here
