@@ -646,7 +646,7 @@ If Vectorize does become unusable, recipe embeddings move to a D1 BLOB column us
 | Viral pipeline     | 2,500 on Sundays only                            | Reserved before the day's user traffic starts                                       |
 | Safety margin      | 1,000                                            | Never allocated                                                                     |
 | Signed-in user cap | 2,000 per user                                   | Measured: a four-slot weekly plan costs **435** with a repair round, leaving **21** chat turns at 71.6 each. The original estimate was ~1,100 and about 7 turns |
-| Demo user cap      | 800 per user                                     | Demo starts with a ready plan, so it needs less. At the measured rate that is 11 chat turns without generating a plan                                           |
+| Demo user cap      | 1,500 per user                                   | Raised from 800: production measured ~290 neurons a turn with every tool sent, so 800 was about 3 turns. With per-turn tool routing a turn is cheaper; 1,500 is several turns without generating a plan |
 | All users combined | Whatever remains (8,500 weekdays, 6,000 Sundays) | First come, first served                                                            |
 
 `BudgetKeeper` uses reserve-then-commit. A caller reserves an estimate, makes the AI call, then commits the actual cost, computed from the returned token counts and the per-model rates in config. Uncommitted reservations expire after 5 minutes.

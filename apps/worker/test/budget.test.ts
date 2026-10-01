@@ -164,7 +164,7 @@ describe('reserve then commit', () => {
 
   it('holds demo users to the smaller cap', async () => {
     const k = keeper(freshName());
-    expect((await k.reserve({ userId: 'd1', estimate: 800, isDemo: true })).ok).toBe(true);
+    expect((await k.reserve({ userId: 'd1', estimate: 1_500, isDemo: true })).ok).toBe(true);
     const denied = await k.reserve({ userId: 'd1', estimate: 1, isDemo: true });
     expect(denied.ok === false && denied.reason).toBe('user_cap');
   });
@@ -222,9 +222,9 @@ describe('GET /api/budget', () => {
     expect(res.status).toBe(200);
 
     const body = (await res.json()) as BudgetStatus;
-    expect(body.user.limit).toBe(800); // demo cap
+    expect(body.user.limit).toBe(1_500); // demo cap
     expect(body.account.limit).toBe(9_000); // 10,000 less the safety margin
-    expect(body.user.left).toBe(800);
+    expect(body.user.left).toBe(1_500);
     expect(Date.parse(body.resetsAt)).toBeGreaterThan(Date.now());
     // resetsAt is the next UTC midnight, which is when the user cap resets.
     expect(body.resetsAt).toMatch(/T00:00:00\.000Z$/);

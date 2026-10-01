@@ -49,6 +49,7 @@ import {
   suggestRecipes,
 } from '../recipes/suggest.js';
 import { budgetKeeper, budgetKeeperGate, workersAiRunner, type ModelRunner } from './adapters.js';
+import { toolsFor } from './tool-routing.js';
 import { SLOT_CAPS, clampToTokens, renderPantry, renderProfile } from './context.js';
 import {
   type DeductionPlan,
@@ -1030,6 +1031,11 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
       })(modelId as never);
 
     const tools = buildTools(this);
+    // Only the tools this message could need; see tool-routing.ts. Their
+    // definitions are most of what a model call costs.
+    const allTools = Object.keys(tools) as (keyof typeof tools)[];
+    const routed = toolsFor(userText);
+    const offered = routed ? allTools.filter((name) => routed.includes(name)) : allTools;
     // After a tool runs, the next step is the one whose words the user reads,
     // so it gets the reply rules again at the bottom of the prompt.
     const afterTool = `${system}\n\n${CHAT_AFTER_TOOL.text}`;
@@ -1055,13 +1061,9 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
           return { ...instructions, activeTools: [], toolChoice: 'none' as const };
         }
         const held = unaskedFoodTools(steps, userText);
-        if (held.length === 0) return instructions;
-        return {
-          ...instructions,
-          activeTools: (Object.keys(tools) as (keyof typeof tools)[]).filter(
-            (name) => !held.includes(name),
-          ),
-        };
+        const active = offered.filter((name) => !held.includes(name));
+        if (active.length === allTools.length) return instructions;
+        return { ...instructions, activeTools: active };
       },
       onFinish: async (event) => {
         const usage: TokenUsage = {
