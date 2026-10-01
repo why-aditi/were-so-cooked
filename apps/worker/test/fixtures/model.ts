@@ -95,7 +95,7 @@ export function mockModel(...scripts: StreamPart[][]): MockLanguageModelV4 {
 
 /** Captures the prompt the SDK actually sent, for context-window assertions. */
 export function recordingModel(
-  onCall: (options: { prompt: unknown; tools: unknown }) => void,
+  onCall: (options: { prompt: unknown; tools: unknown; toolChoice: unknown }) => void,
   ...scripts: StreamPart[][]
 ): MockLanguageModelV4 {
   let step = 0;
@@ -103,7 +103,7 @@ export function recordingModel(
     provider: 'mock-workers-ai',
     modelId: '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
     doStream: async (options) => {
-      onCall({ prompt: options.prompt, tools: options.tools });
+      onCall({ prompt: options.prompt, tools: options.tools, toolChoice: options.toolChoice });
       const parts = scripts[Math.min(step, scripts.length - 1)] ?? says('ok');
       step += 1;
       return { stream: stream(parts) as never };
