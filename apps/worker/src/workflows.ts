@@ -5,12 +5,12 @@ import {
   type WorkflowStepConfig,
 } from 'cloudflare:workers';
 import { NonRetryableError } from 'cloudflare:workflows';
-import type { MealSlot, ScanItem } from '@cooked/shared';
+import type { MealSlot, PipelineRun, ScanItem } from '@cooked/shared';
 import { budgetKeeper, workersAiRunner, workersAiVision } from './agent/adapters.js';
 import type { KitchenAgent } from './agent/kitchen-agent.js';
 import type { Env } from './env.js';
-import type { TokenUsage } from './budget/rates.js';
-import { EXTRACT_MODEL, extractItems } from './photo/extract.js';
+import { type TokenUsage, neuronsFor } from './budget/rates.js';
+import { EXTRACT_MODEL as VISION_MODEL, extractItems } from './photo/extract.js';
 import { groceryDiff } from './plan/grocery.js';
 import { buildPlan } from './plan/plan.js';
 import type { PlanContext, PlanStep } from './plan/record.js';
@@ -20,7 +20,33 @@ import {
   generateRecipes,
   llmProposer,
 } from './recipes/generate.js';
-import { d1RecipeSearch, loadSubstitutions, loadTaxonomy } from './recipes/store.js';
+import { d1RecipeSearch, loadSubstitutions, loadTaxonomy, saveRecipe } from './recipes/store.js';
+import { type VideoCandidate, discoverVideos } from './viral/discover.js';
+import {
+  EXTRACT_MODEL,
+  FILTER_BATCH,
+  FILTER_MODEL,
+  classifyDescriptions,
+  extractRecipe,
+} from './viral/extract.js';
+import {
+  type JudgedVideo,
+  MAX_ERRORS,
+  MAX_RECIPES,
+  type RunCounts,
+  type VideoOutcome,
+  dedupe,
+  filteredOut,
+  judgeExtraction,
+} from './viral/pipeline.js';
+import {
+  closeRun,
+  knownContentHashes,
+  openRun,
+  recordSeenVideos,
+  seenVideoIds,
+} from './viral/store.js';
+import { youtubeSearch } from './viral/youtube.js';
 import { userIdFromKey, validateUpload } from './photo/validate.js';
 
 type KitchenAgentStub = DurableObjectStub<KitchenAgent>;
@@ -38,13 +64,7 @@ function kitchenAgent(env: Env, userId: string): KitchenAgentStub {
  * Objects: a bound Workflow class that is not exported fails the deploy, so
  * these have to exist before any infrastructure can be stood up.
  *
- * One that is not built yet throws rather than half-working. A Workflow that
- * returns a plausible empty result is worse than one that fails.
  */
-
-const todo = (name: string, section: string): never => {
-  throw new Error(`${name} is not implemented yet — see spec ${section}.`);
-};
 
 /** Section 6: "Every AI step: 3 retries, exponential backoff from 5s, 60s timeout." */
 const AI_STEP: WorkflowStepConfig = {
@@ -419,7 +439,7 @@ export class PhotoScanWorkflow extends WorkflowEntrypoint<Env, PhotoScanParams> 
 
       const result = await extractItems(bytes, { vision: workersAiVision(this.env) });
       await budgetKeeper(this.env).commit(reservation.reservationId, {
-        model: EXTRACT_MODEL,
+        model: VISION_MODEL,
         usage: result.usage,
         userId,
       });
@@ -481,8 +501,224 @@ export interface ViralRecipesParams {
   manual?: boolean;
 }
 
+/** Section 6: "Reserve about 2,500 neurons" — the whole Sunday viral pool. */
+const VIRAL_ESTIMATE_NEURONS = 2_500;
+
+/** The ledger's user id for a run nobody in particular started. */
+const VIRAL_LEDGER_USER = 'system:viral';
+
+export interface ViralRecipesOutcome {
+  status: PipelineRun['status'];
+  added: number;
+  duplicates: number;
+  errors: number;
+}
+
+/**
+ * `ViralRecipesWorkflow` from section 6.
+ *
+ * Open the run row, reserve, discover, filter in batches, extract one video
+ * per step, then dedupe, store and close the row. The decisions — what a
+ * video is worth, what counts as a duplicate, what a stored recipe may claim
+ * — live in `viral/pipeline.ts` as pure phases; this class only puts them on
+ * a durable schedule, so a failed extraction reruns one video, not the run.
+ *
+ * ponytail: section 6's embed step (Vectorize upsert, the 0.92 similarity
+ * dedupe) is not here yet. D1's UNIQUE `content_hash` is the authoritative
+ * dedupe either way, and nothing reads the index until recipe search moves
+ * onto it.
+ */
 export class ViralRecipesWorkflow extends WorkflowEntrypoint<Env, ViralRecipesParams> {
-  override async run(_event: WorkflowEvent<ViralRecipesParams>, _step: WorkflowStep): Promise<never> {
-    return todo('ViralRecipesWorkflow', 'section 6, ViralRecipesWorkflow');
+  override async run(
+    event: WorkflowEvent<ViralRecipesParams>,
+    step: WorkflowStep,
+  ): Promise<ViralRecipesOutcome> {
+    const runId = event.instanceId;
+    const startedAt = await step.do('open run', async () => {
+      const at = new Date().toISOString();
+      await openRun(this.env.DB, runId, at);
+      return at;
+    });
+    const now = Date.parse(startedAt);
+
+    let reservation: string | null = null;
+    const errors: string[] = [];
+    const fail = async (reason: string): Promise<ViralRecipesOutcome> => {
+      await step.do('close run as failed', async () => {
+        if (reservation) await budgetKeeper(this.env).release(reservation);
+        await closeRun(
+          this.env.DB,
+          runId,
+          'failed',
+          { ...EMPTY_COUNTS, errors: [reason, ...errors].slice(0, MAX_ERRORS) },
+          new Date().toISOString(),
+        );
+        return true;
+      });
+      console.log(JSON.stringify({ event: 'viral_run', runId, status: 'failed', reason }));
+      return { status: 'failed', added: 0, duplicates: 0, errors: errors.length + 1 };
+    };
+
+    try {
+      // ---- Preconditions and reservation --------------------------------
+      //
+      // The preconditions are checked before reserving, so a missing key
+      // does not hold the Sunday pool for five minutes on its way to failing.
+      //
+      // Section 6: "If the reservation is refused, the run ends as
+      // `deferred`". `pipeline_runs.status` has no such value, so a deferred
+      // run is recorded as failed with the reason first in its errors.
+      const reserved = await step.do('reserve neurons', async () => {
+        if (!this.env.YOUTUBE_API_KEY) {
+          return { ok: false as const, reason: 'YOUTUBE_API_KEY is not set.' };
+        }
+        if (!this.env.AI) return { ok: false as const, reason: 'No Workers AI binding.' };
+        const r = await budgetKeeper(this.env).reserve({
+          userId: VIRAL_LEDGER_USER,
+          pool: 'viral',
+          estimate: VIRAL_ESTIMATE_NEURONS,
+        });
+        return r.ok
+          ? { ok: true as const, id: r.reservationId }
+          : { ok: false as const, reason: `deferred: ${r.message}` };
+      });
+      if (!reserved.ok) return await fail(reserved.reason);
+      reservation = reserved.id;
+
+      // ---- Discover and rank --------------------------------------------
+      const discovered = await step.do('discover', AI_STEP, async () => {
+        const apiKey = this.env.YOUTUBE_API_KEY;
+        if (!apiKey) throw new NonRetryableError('YOUTUBE_API_KEY is not set.');
+        return discoverVideos({
+          search: youtubeSearch(apiKey),
+          seen: (ids) => seenVideoIds(this.env.DB, ids),
+          now,
+        });
+      });
+      errors.push(...discovered.errors);
+      if (discovered.found === 0 && discovered.errors.length > 0) {
+        return await fail('Every YouTube search failed.');
+      }
+
+      const model = workersAiRunner(this.env);
+
+      // ---- Filter, ten videos a step ------------------------------------
+      const keep: VideoCandidate[] = [];
+      const filterUsage: TokenUsage = { promptTokens: 0, completionTokens: 0 };
+      for (let start = 0; start < discovered.candidates.length; start += FILTER_BATCH) {
+        const batch = discovered.candidates.slice(start, start + FILTER_BATCH);
+        const result = await step.do(`filter ${String(start / FILTER_BATCH + 1)}`, AI_STEP, () =>
+          classifyDescriptions(batch, { model }),
+        );
+        keep.push(...result.keep);
+        addUsage(filterUsage, result.usage);
+        errors.push(...result.errors);
+      }
+
+      // ---- Extract, one video a step ------------------------------------
+      //
+      // Past the cap is left out of `seen_videos`: never processed, so next
+      // week's run can still use it.
+      const queue = keep.slice(0, MAX_RECIPES);
+      const extractUsage: TokenUsage = { promptTokens: 0, completionTokens: 0 };
+      const judged: JudgedVideo[] = [];
+      let extracted = 0;
+      for (const video of queue) {
+        const result = await step.do(`extract ${video.videoId}`, AI_STEP, async () => {
+          const out = await extractRecipe(video, { model });
+          const taxonomy = await loadTaxonomy(this.env.DB);
+          return {
+            usage: out.usage,
+            extracted: out.draft !== null,
+            judged: await judgeExtraction(video, out, taxonomy, now),
+          };
+        });
+        addUsage(extractUsage, result.usage);
+        if (result.extracted) extracted += 1;
+        judged.push(result.judged);
+      }
+
+      // ---- Dedupe, store, record ----------------------------------------
+      const stored = await step.do('store', async () => {
+        const built = judged.flatMap((j) =>
+          j.outcome === 'built' ? [{ videoId: j.videoId, recipe: j.recipe }] : [],
+        );
+        const known = await knownContentHashes(
+          this.env.DB,
+          built.map((b) => b.recipe.contentHash),
+        );
+        const deduped = dedupe(built, known);
+        // Idempotent on `content_hash`, so a retried step cannot duplicate.
+        for (const recipe of deduped.recipes) await saveRecipe(this.env.DB, recipe);
+
+        const outcomes: [string, VideoOutcome][] = [
+          ...filteredOut(discovered.candidates, keep),
+          ...judged.flatMap((j): [string, VideoOutcome][] =>
+            j.outcome === 'built' ? [] : [[j.videoId, j.outcome]],
+          ),
+          ...deduped.outcomes,
+        ];
+        await recordSeenVideos(
+          this.env.DB,
+          outcomes.map(([videoId, outcome]) => ({ videoId, firstSeen: startedAt, outcome })),
+        );
+        return { added: deduped.recipes.length, duplicates: deduped.duplicates };
+      });
+
+      for (const j of judged) if (j.outcome !== 'built') errors.push(j.error);
+
+      // ---- Close the run and settle the budget --------------------------
+      const counts: RunCounts = {
+        found: discovered.found,
+        filtered: keep.length,
+        extracted,
+        added: stored.added,
+        duplicates: stored.duplicates,
+        neurons: neuronsFor(FILTER_MODEL, filterUsage) + neuronsFor(EXTRACT_MODEL, extractUsage),
+        errors: errors.slice(0, MAX_ERRORS),
+      };
+      await step.do('close run', async () => {
+        const keeper = budgetKeeper(this.env);
+        // Two models at two rates, so two ledger rows: the reservation takes
+        // the extraction spend, and the filter spend is its own entry.
+        await keeper.commit(reserved.id, {
+          model: EXTRACT_MODEL,
+          usage: extractUsage,
+          userId: VIRAL_LEDGER_USER,
+          pool: 'viral',
+        });
+        if (filterUsage.promptTokens + filterUsage.completionTokens > 0) {
+          await keeper.commit(`${runId}:filter`, {
+            model: FILTER_MODEL,
+            usage: filterUsage,
+            userId: VIRAL_LEDGER_USER,
+            pool: 'viral',
+          });
+        }
+        await closeRun(this.env.DB, runId, 'ok', counts, new Date().toISOString());
+        return true;
+      });
+
+      console.log(JSON.stringify({ event: 'viral_run', runId, status: 'ok', ...counts, errors: counts.errors.length }));
+      return { status: 'ok', added: counts.added, duplicates: counts.duplicates, errors: counts.errors.length };
+    } catch (e) {
+      await fail(e instanceof Error ? e.message : String(e));
+      throw e;
+    }
   }
+}
+
+const EMPTY_COUNTS: RunCounts = {
+  found: 0,
+  filtered: 0,
+  extracted: 0,
+  added: 0,
+  duplicates: 0,
+  neurons: 0,
+  errors: [],
+};
+
+function addUsage(into: TokenUsage, more: TokenUsage): void {
+  into.promptTokens += more.promptTokens;
+  into.completionTokens += more.completionTokens;
 }

@@ -4,6 +4,8 @@ import {
   MealSlot,
   type PantryItem,
   type Profile,
+  type Recipe,
+  type Swap,
   type TasteMemory,
   Unit,
 } from '@cooked/shared';
@@ -36,9 +38,7 @@ import type { RequiredIngredient } from './deduct.js';
  * Tools talk to `PantryOps`, not to the Durable Object, so a turn can be
  * tested against a fake kitchen with a mocked model.
  *
- * Every section 5 tool is here except `search_trending`, which needs the
- * catalog `ViralRecipesWorkflow` fills. A tool the model can call but the
- * server cannot answer is worse than a missing one.
+ * Every section 5 tool is here.
  */
 
 /* ------------------------------ what a tool sees ---------------------------- */
@@ -104,6 +104,15 @@ export interface PantryOps {
     }[]
   >;
   checkGroceryItem(itemId: string, checked: boolean): Promise<{ id: string; checked: boolean } | null>;
+  searchTrending(req: { query?: string | undefined; limit?: number | undefined }): Promise<{
+    results: {
+      recipe: Recipe;
+      swaps: Swap[];
+      have: string[];
+      missing: string[];
+    }[];
+    hidden: { title: string; reason: string }[];
+  }>;
 }
 
 /* --------------------------------- schemas --------------------------------- */
@@ -203,6 +212,16 @@ export const PlanArgs = z.object({
 export const CheckGroceryArgs = z.object({
   item_id: z.string().min(1).describe('The id from a get_grocery_list result.'),
   checked: z.boolean().describe('True once bought; false to put it back on the list.'),
+});
+
+export const TrendingArgs = z.object({
+  query: z
+    .string()
+    .min(1)
+    .max(200)
+    .optional()
+    .describe('A dish, ingredient or cuisine to narrow to. Omit for the top of the week.'),
+  count: z.number().int().positive().max(10).optional().describe('How many. Default 5.'),
 });
 
 /** Every gated tool's args, for re-validating an approval before it runs. */
@@ -601,6 +620,33 @@ export function buildTools(ops: PantryOps): ToolSet {
         const item = await ops.checkGroceryItem(a.item_id, a.checked);
         if (!item) return { ok: false, reason: 'No grocery item with that id.' };
         return { ok: true, item };
+      },
+    }),
+
+    search_trending: tool({
+      description:
+        "Search this week's trending recipes from YouTube creators. Use when the user asks " +
+        "what is trending, viral or popular right now. Every result already fits their " +
+        'profile. Always credit the creator by name when you mention one.',
+      inputSchema: TrendingArgs,
+      execute: async (a) => {
+        const out = await ops.searchTrending({ query: a.query, limit: a.count });
+        return {
+          // Same field name and shape as suggest_recipes, so the same card
+          // renders both — plus the credit section 6 requires.
+          suggestions: out.results.map((r) => ({
+            id: r.recipe.id,
+            title: r.recipe.title,
+            cuisine: r.recipe.cuisine,
+            minutes: r.recipe.minutes,
+            have: r.have,
+            missing: r.missing,
+            swaps: r.swaps.map((w) => ({ from: w.fromName, to: w.toName, why: w.explanation })),
+            creator: r.recipe.creator,
+            sourceUrl: r.recipe.sourceUrl,
+          })),
+          hidden: out.hidden,
+        };
       },
     }),
   };

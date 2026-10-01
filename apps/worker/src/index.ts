@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import { fail, originCheck } from './auth.js';
 import { deleteExpiredDemoAccounts } from './cleanup.js';
 import type { Env } from './env.js';
+import { adminRoutes } from './routes/admin-routes.js';
 import { apiRoutes } from './routes/api-routes.js';
 import { authRoutes } from './routes/auth-routes.js';
 
@@ -69,6 +70,7 @@ app.use('*', async (c, next) => {
 app.use('*', originCheck);
 app.route('/', authRoutes);
 app.route('/', apiRoutes);
+app.route('/', adminRoutes);
 
 /**
  * Section 11: "Errors always return `{ error: { code, message, requestId } }`."
@@ -168,7 +170,7 @@ app.all('*', async (c) => {
       {
         error: {
           code: 'not_found',
-          message: `No route for ${c.req.method} ${path}. Only /healthz is implemented so far.`,
+          message: `No route for ${c.req.method} ${path}.`,
           requestId: c.get('requestId'),
         },
       },
@@ -183,10 +185,7 @@ app.all('*', async (c) => {
 export default {
   fetch: app.fetch,
 
-  /**
-   * Section 3's two crons. Wiring them now means a misconfigured schedule shows
-   * up as a log line rather than a silent no-op, but neither job is built yet.
-   */
+  /** Section 3's two crons. */
   async scheduled(event: ScheduledController, env: Env): Promise<void> {
     if (event.cron === '15 0 * * *') {
       const result = await deleteExpiredDemoAccounts(env);
@@ -203,13 +202,30 @@ export default {
       return;
     }
 
+    if (event.cron === '30 0 * * 0') {
+      // Just after the daily budget turns over, as section 3 schedules it.
+      // The Workflow records its own outcome in `pipeline_runs`.
+      const instance = await env.VIRAL_RECIPES.create({ params: {} });
+      console.log(
+        JSON.stringify({
+          event: 'cron',
+          cron: event.cron,
+          job: 'start-viral-recipes',
+          environment: env.ENVIRONMENT,
+          outcome: 'started',
+          runId: instance.id,
+        }),
+      );
+      return;
+    }
+
     console.log(
       JSON.stringify({
         event: 'cron',
         cron: event.cron,
-        job: event.cron === '30 0 * * 0' ? 'start-viral-recipes' : 'unknown',
+        job: 'unknown',
         environment: env.ENVIRONMENT,
-        outcome: 'not_implemented',
+        outcome: 'ignored',
       }),
     );
   },

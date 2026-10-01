@@ -81,7 +81,7 @@ async function sign(value: string, secret: string): Promise<string> {
 }
 
 /** Constant-time compare, so a bad signature cannot be guessed byte by byte. */
-function timingSafeEqual(a: string, b: string): boolean {
+export function timingSafeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let diff = 0;
   for (let i = 0; i < a.length; i += 1) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);

@@ -127,6 +127,9 @@ export interface RecipeSuggestion {
   have: string[];
   missing: string[];
   advisories?: string[];
+  /** Trending recipes only: section 6 credits the creator and links the video. */
+  creator?: string | null;
+  sourceUrl?: string | null;
 }
 
 export function RecipeCard({
@@ -152,6 +155,20 @@ export function RecipeCard({
     >
       <p className="text-[0.88rem] m-0" style={{ color: 'var(--text-muted)' }}>
         {recipe.cuisine} · {recipe.minutes} min
+        {recipe.creator ? (
+          <>
+            {' '}
+            · by{' '}
+            {recipe.sourceUrl ? (
+              <a href={recipe.sourceUrl} target="_blank" rel="noopener noreferrer">
+                {recipe.creator}
+                <span className="sr-only"> (opens YouTube)</span>
+              </a>
+            ) : (
+              recipe.creator
+            )}
+          </>
+        ) : null}
       </p>
 
       {/* The compliance badge section 10 asks for. It states what was

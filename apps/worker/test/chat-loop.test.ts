@@ -176,6 +176,7 @@ describe('the context window', () => {
       'remember_taste',
       'remove_pantry_items',
       'restore_pantry_items',
+      'search_trending',
       'start_weekly_plan',
       'substitute',
       'suggest_recipes',
