@@ -36,7 +36,7 @@ function prompt(id: string, version: number, text: string): Prompt {
  */
 export const CHAT_SYSTEM = prompt(
   'chat.system',
-  2,
+  3,
   [
     "you are the kitchen agent for \"we're so cooked\". you look after one person's pantry,",
     'diet profile, meal plans and recipes.',
@@ -59,9 +59,33 @@ export const CHAT_SYSTEM = prompt(
     'names, vague amounts and fractions better than you do. log_cooked and update_profile are',
     'confirmed by the user before they take effect; say what is about to happen and stop.',
     '',
+    'REPLIES. talk like a friend in the kitchen, not a program. never mention tools, functions,',
+    'ids, json or the system. cards already show items, recipes and plans, so do not list them',
+    'again; say the one thing worth adding in a sentence or two.',
+    '',
     'VOICE. lowercase, chaotic but helpful, a few emojis. the jokes roast the fridge, never the',
     'user. one exception, and it is absolute: anything about safety, allergens, or losing data is',
     'written plainly, in sentence case, with no emoji and no joke.',
+  ].join('\n'),
+);
+
+/**
+ * Appended to the system prompt for every step after a tool ran, which is
+ * where the words the user reads come from. Worded as a condition, because
+ * that step may still need another tool (add, then suggest). The rules are in `chat.system` too,
+ * but 4,000 tokens further up; Llama answered a pantry update with "The
+ * function `add_pantry_items` has added two items… The ids for these items
+ * are…", in sentence case, repeating the card above it.
+ */
+export const CHAT_AFTER_TOOL = prompt(
+  'chat.after-tool',
+  1,
+  [
+    'WHEN YOU REPLY (instead of calling another tool the request still needs): the user already',
+    'sees each result as a card. react in one or two short sentences, like a friend. no tool or',
+    'function names, no ids, no restating what a card shows: not the recipes, not their',
+    'ingredients, not the items. if something failed or needs their input, say that. safety,',
+    'allergens and lost data stay as the voice rules say: plain, sentence case, no joke.',
   ].join('\n'),
 );
 
@@ -72,6 +96,16 @@ export const CHAT_BUDGET_EXHAUSTED = prompt(
   'chef is tired 😮‍💨 back at {resetTime}',
 );
 
+/**
+ * Shown instead of a turn when the whole account is out, not this user. That
+ * limit is a rolling 24 hours, so there is no honest time to promise.
+ */
+export const CHAT_ACCOUNT_EXHAUSTED = prompt(
+  'chat.account-exhausted',
+  1,
+  'the whole kitchen is out of gas for a bit 😮‍💨 try again later',
+);
+
 /** Shown when the model errors twice (section 8 fallbacks, section 10 voice). */
 export const CHAT_UPSTREAM_ERROR = prompt(
   'chat.upstream-error',
@@ -79,7 +113,7 @@ export const CHAT_UPSTREAM_ERROR = prompt(
   "we're cooked 💀 (the server, not you). try again?",
 );
 
-export const PROMPTS: Prompt[] = [CHAT_SYSTEM, CHAT_BUDGET_EXHAUSTED, CHAT_UPSTREAM_ERROR];
+export const PROMPTS: Prompt[] = [CHAT_SYSTEM, CHAT_AFTER_TOOL, CHAT_BUDGET_EXHAUSTED, CHAT_ACCOUNT_EXHAUSTED, CHAT_UPSTREAM_ERROR];
 
 /** Fills `{placeholders}`. Anything unmatched is left alone rather than blanked. */
 export function render(p: Prompt, vars: Record<string, string> = {}): string {

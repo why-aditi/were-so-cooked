@@ -1,6 +1,13 @@
 import { AIChatAgent, type OnChatMessageOptions } from '@cloudflare/ai-chat';
 import type { SubstitutionRow, Taxonomy } from '@cooked/safety';
-import { CHAT_SYSTEM } from '@cooked/prompts';
+import {
+  CHAT_ACCOUNT_EXHAUSTED,
+  CHAT_AFTER_TOOL,
+  CHAT_BUDGET_EXHAUSTED,
+  CHAT_SYSTEM,
+  render,
+} from '@cooked/prompts';
+import { nextUtcMidnight } from '../budget/policy.js';
 import type {
   CookingLogEntry,
   MealSlot,
@@ -112,6 +119,14 @@ const EMBEDDING_MODEL = '@cf/baai/bge-m3';
  * rate. Reserving less let a turn start that the budget could not cover.
  */
 const TURN_ESTIMATE_NEURONS = 300;
+
+/**
+ * The same two calls on the low-power model: about 10,000 tokens at Gemma
+ * 4's blended rate (spike 2) is ~160 neurons. Tried when the full estimate
+ * does not fit, so a user with a fifth of their day left gets the cheaper
+ * model, as section 8 says, rather than a refusal.
+ */
+const LOW_POWER_TURN_ESTIMATE_NEURONS = 170;
 
 /** Section 5 step 4: tools run server-side, then the model answers once. */
 const MAX_STEPS = 4;
@@ -938,6 +953,19 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
     return parts.join('\n\n');
   }
 
+  /** When the daily cap resets (UTC midnight), as a time in the user's zone. */
+  private async budgetResetTime(): Promise<string> {
+    const { timeZone } = await this.getProfile();
+    const at = new Date(nextUtcMidnight(Date.now()));
+    try {
+      return at.toLocaleTimeString('en-IN', { timeZone, hour: 'numeric', minute: '2-digit' });
+    } catch {
+      // An unknown zone in an old profile row should not cost the user the
+      // message; UTC is at least true.
+      return `${at.toLocaleTimeString('en-GB', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit' })} UTC`;
+    }
+  }
+
   /* -------------------------------- the turn --------------------------------- */
 
   /**
@@ -957,18 +985,32 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
 
     const startedAt = Date.now();
 
-    // Step 2: can they afford a turn at all?
-    const reservation = await gate.reserve(TURN_ESTIMATE_NEURONS);
+    // Step 2: can they afford a turn at all? Section 8 degrades before it
+    // refuses: a full turn that does not fit is tried again on the cheap
+    // model. Production refused "i want something vegan" with 199 neurons
+    // left — a quarter of the day — because the full estimate is 300.
+    let lowPower = false;
+    let reservation = await gate.reserve(TURN_ESTIMATE_NEURONS);
     if (!reservation.ok) {
-      return new Response(reservation.message, {
+      lowPower = true;
+      reservation = await gate.reserve(LOW_POWER_TURN_ESTIMATE_NEURONS);
+    }
+    if (!reservation.ok) {
+      // The product's copy, not the ledger's ("You have 31 neurons left").
+      // Only the per-user caps reset at UTC midnight; the account's limit is
+      // a rolling 24 hours, so it gets no reset time it could not keep.
+      const text =
+        reservation.reason === 'account_rolling'
+          ? CHAT_ACCOUNT_EXHAUSTED.text
+          : render(CHAT_BUDGET_EXHAUSTED, { resetTime: await this.budgetResetTime() });
+      return new Response(text, {
         status: 429,
         headers: { 'content-type': 'text/plain; charset=utf-8' },
       });
     }
 
     // Section 8: below 20% of the cap, chat drops to the cheap model.
-    const fractionLeft = await gate.fractionLeft();
-    const lowPower = fractionLeft < LOW_POWER_THRESHOLD;
+    if (!lowPower) lowPower = (await gate.fractionLeft()) < LOW_POWER_THRESHOLD;
     const modelId = lowPower ? LOW_POWER_MODEL : CHAT_MODEL;
 
     const userText = latestUserText(this.messages);
@@ -988,6 +1030,9 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
       })(modelId as never);
 
     const tools = buildTools(this);
+    // After a tool runs, the next step is the one whose words the user reads,
+    // so it gets the reply rules again at the bottom of the prompt.
+    const afterTool = `${system}\n\n${CHAT_AFTER_TOOL.text}`;
     const result = streamText({
       model,
       system,
@@ -1005,10 +1050,14 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
       // SDK does not enforce it. Leaving them out also drops ~2,800 tokens of
       // definitions from a step that cannot use them.
       prepareStep: ({ stepNumber, steps }) => {
-        if (mustAnswer(stepNumber, steps)) return { activeTools: [], toolChoice: 'none' as const };
+        const instructions = stepNumber > 0 ? { instructions: afterTool } : {};
+        if (mustAnswer(stepNumber, steps)) {
+          return { ...instructions, activeTools: [], toolChoice: 'none' as const };
+        }
         const held = unaskedFoodTools(steps, userText);
-        if (held.length === 0) return {};
+        if (held.length === 0) return instructions;
         return {
+          ...instructions,
           activeTools: (Object.keys(tools) as (keyof typeof tools)[]).filter(
             (name) => !held.includes(name),
           ),
@@ -1030,6 +1079,8 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
             userId,
             model: modelId,
             prompt: CHAT_SYSTEM.ref,
+            // Steps after the first also carry this one.
+            afterToolPrompt: (event.steps?.length ?? 1) > 1 ? CHAT_AFTER_TOOL.ref : null,
             promptTokens: usage.promptTokens,
             completionTokens: usage.completionTokens,
             steps: event.steps?.length ?? 1,

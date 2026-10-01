@@ -212,34 +212,52 @@ function Message({
   onApprove: (approvalId: string, approved: boolean) => void;
 }) {
   const isUser = message.role === 'user';
-  const text = message.parts
-    .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-    .map((p) => p.text)
-    .join('');
+
+  // In the order the turn produced them: a tool's card, then the words about
+  // it. Rendering all the text first put "here are a few recipes" above the
+  // recipes it was introducing. Adjacent text parts join into one paragraph.
+  const blocks: ({ kind: 'text'; text: string } | { kind: 'tool'; part: ToolPart })[] = [];
+  for (const part of message.parts) {
+    if (part.type === 'text') {
+      const last = blocks.at(-1);
+      const text = (part as { text: string }).text;
+      if (last?.kind === 'text') last.text += text;
+      else blocks.push({ kind: 'text', text });
+    } else if (isToolPart(part)) {
+      blocks.push({ kind: 'tool', part });
+    }
+  }
 
   return (
     <div className={isUser ? 'flex justify-end' : ''}>
       <div className={isUser ? 'max-w-[85%]' : 'w-full'}>
-        {text ? (
-          <p
-            className={
-              isUser
-                ? 'my-2 inline-block rounded-2xl rounded-br-sm px-3.5 py-2 whitespace-pre-wrap'
-                : 'my-2 whitespace-pre-wrap'
-            }
-            style={
-              isUser
-                ? { background: 'var(--surface-high)', border: '2px solid var(--line)' }
-                : undefined
-            }
-          >
-            {text}
-          </p>
-        ) : null}
-
-        {message.parts.filter(isToolPart).map((part: ToolPart, index: number) => (
-          <ToolCard key={part.toolCallId ?? index} part={part} onApprove={onApprove} />
-        ))}
+        {blocks.map((block, index) =>
+          block.kind === 'text' ? (
+            block.text.trim() ? (
+              <p
+                key={`text-${index}`}
+                className={
+                  isUser
+                    ? 'my-2 inline-block rounded-2xl rounded-br-sm px-3.5 py-2 whitespace-pre-wrap'
+                    : 'my-2 whitespace-pre-wrap'
+                }
+                style={
+                  isUser
+                    ? { background: 'var(--surface-high)', border: '2px solid var(--line)' }
+                    : undefined
+                }
+              >
+                {block.text.trim()}
+              </p>
+            ) : null
+          ) : (
+            <ToolCard
+              key={block.part.toolCallId ?? index}
+              part={block.part}
+              onApprove={onApprove}
+            />
+          ),
+        )}
       </div>
     </div>
   );
