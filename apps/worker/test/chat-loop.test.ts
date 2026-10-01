@@ -299,9 +299,10 @@ describe('a turn always ends in words', () => {
     expect(JSON.stringify(messages.at(-1))).toContain('that did not work, sorry');
   });
 
-  it('answers a pantry update instead of going on to suggest recipes', async () => {
+  it('offers a pantry message only the pantry tools', async () => {
     // Production: "bought 1kg paneer, 6 eggs" had Llama chain suggest_recipes
-    // after the pantry write, unasked, and the reply took three minutes.
+    // after the pantry write, unasked; and every call carried all fifteen
+    // tool definitions, ~3,000 tokens, most of what a turn costs.
     const offered: string[][] = [];
     await withAgent(
       recordingModel(
@@ -314,13 +315,30 @@ describe('a turn always ends in words', () => {
       },
     );
     expect(offered).toHaveLength(2);
-    expect(offered[0]).toContain('suggest_recipes');
-    expect(offered[1]).not.toContain('suggest_recipes');
-    expect(offered[1]).not.toContain('start_weekly_plan');
-    // Only the food tools go: a pantry edit that missed can still look the
-    // item up and retry, and a second pantry change still goes through.
+    expect(offered[0]).toContain('add_pantry_items');
+    expect(offered[0]).not.toContain('suggest_recipes');
+    expect(offered[0]).not.toContain('start_weekly_plan');
+    // A pantry edit that missed can still look the item up and retry.
     expect(offered[1]).toContain('list_pantry');
     expect(offered[1]).toContain('remove_pantry_items');
+  });
+
+  it('holds back a food tool after a pantry write the message did not ask for', async () => {
+    // "for the week" routes the planner in, but the message asked for no plan.
+    const offered: string[][] = [];
+    await withAgent(
+      recordingModel(
+        (c) => offered.push(toolNames(c.tools)),
+        calls('add_pantry_items', { text: '1kg paneer' }),
+        says('stocked 🧀'),
+      ),
+      async (agent) => {
+        await agent.saveMessages(userMessage('bought 1kg paneer for the week'));
+      },
+    );
+    expect(offered[0]).toContain('start_weekly_plan');
+    expect(offered[1]).not.toContain('start_weekly_plan');
+    expect(offered[1]).toContain('get_grocery_list');
   });
 
   it('reminds the steps after a tool how to reply', async () => {

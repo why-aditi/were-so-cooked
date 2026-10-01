@@ -164,7 +164,7 @@ describe('reserve then commit', () => {
 
   it('holds demo users to the smaller cap', async () => {
     const k = keeper(freshName());
-    expect((await k.reserve({ userId: 'd1', estimate: 800, isDemo: true })).ok).toBe(true);
+    expect((await k.reserve({ userId: 'd1', estimate: 1_500, isDemo: true })).ok).toBe(true);
     const denied = await k.reserve({ userId: 'd1', estimate: 1, isDemo: true });
     expect(denied.ok === false && denied.reason).toBe('user_cap');
   });
@@ -222,11 +222,48 @@ describe('GET /api/budget', () => {
     expect(res.status).toBe(200);
 
     const body = (await res.json()) as BudgetStatus;
-    expect(body.user.limit).toBe(800); // demo cap
+    expect(body.user.limit).toBe(1_500); // demo cap
     expect(body.account.limit).toBe(9_000); // 10,000 less the safety margin
-    expect(body.user.left).toBe(800);
+    expect(body.user.left).toBe(1_500);
     expect(Date.parse(body.resetsAt)).toBeGreaterThan(Date.now());
     // resetsAt is the next UTC midnight, which is when the user cap resets.
     expect(body.resetsAt).toMatch(/T00:00:00\.000Z$/);
+  });
+});
+
+describe('PUT /api/profile/time-zone', () => {
+  const session = async (ip: string) => {
+    const demo = await SELF.fetch(`${ORIGIN}/auth/demo`, {
+      method: 'POST',
+      headers: { origin: ORIGIN, 'cf-connecting-ip': ip },
+    });
+    return demo.headers
+      .getSetCookie()
+      .find((h) => h.startsWith('wsc_session='))
+      ?.split(';')[0] as string;
+  };
+  const put = (cookie: string, timeZone: unknown) =>
+    SELF.fetch(`${ORIGIN}/api/profile/time-zone`, {
+      method: 'PUT',
+      headers: { cookie, origin: ORIGIN, 'content-type': 'application/json' },
+      body: JSON.stringify({ timeZone }),
+    });
+
+  it('adopts the browser zone while the profile is still UTC, and only then', async () => {
+    const cookie = await session('198.51.100.91');
+    const first = (await (await put(cookie, 'Asia/Kolkata')).json()) as {
+      profile: { timeZone: string };
+    };
+    expect(first.profile.timeZone).toBe('Asia/Kolkata');
+    // Once set, a later sync never overrides it.
+    const second = (await (await put(cookie, 'Europe/London')).json()) as {
+      profile: { timeZone: string };
+    };
+    expect(second.profile.timeZone).toBe('Asia/Kolkata');
+  });
+
+  it('rejects something that is not a zone', async () => {
+    const cookie = await session('198.51.100.92');
+    expect((await put(cookie, 'Mars/Olympus')).status).toBe(422);
   });
 });

@@ -96,6 +96,13 @@ export const api = {
 
   profile: () => request<{ profile: Profile }>('/api/profile'),
 
+  adoptTimeZone: (timeZone: string) =>
+    request<{ profile: Profile }>('/api/profile/time-zone', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ timeZone }),
+    }),
+
   saveProfile: (profile: Omit<Profile, 'updatedAt'>) =>
     request<{ profile: Profile }>('/api/profile', {
       method: 'PUT',

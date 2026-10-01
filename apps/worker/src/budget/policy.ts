@@ -28,7 +28,7 @@ export const SAFETY_MARGIN = 1_000;
 /** Reserved before the day's user traffic, Sundays only. */
 export const VIRAL_POOL = 2_500;
 export const SIGNED_IN_USER_CAP = 2_000;
-export const DEMO_USER_CAP = 800;
+export const DEMO_USER_CAP = 1_500;
 
 /**
  * Section 12 states these explicitly as 8,500 and 6,000. The arithmetic does

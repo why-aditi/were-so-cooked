@@ -1,9 +1,9 @@
 import { useAgent } from 'agents/react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { EMPTY_STATE, type SyncedState } from '../lib/api';
+import { EMPTY_STATE, api, type SyncedState } from '../lib/api';
 import { useSession } from '../lib/session';
 import { useTheme } from '../lib/theme';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 /**
  * The app shell (section 10).
@@ -44,6 +44,8 @@ export function AppShell() {
     name: user.id,
     onStateUpdate: (next) => setState(next ?? EMPTY_STATE),
   });
+
+  useSyncTimeZone();
 
   return (
     // Exactly one screen tall: the page itself never scrolls. Each screen
@@ -174,4 +176,23 @@ function Badge({ count, label, floating }: { count: number; label: string; float
       <span className="sr-only"> needing attention in {label}</span>
     </span>
   );
+}
+
+/**
+ * A new profile starts in UTC, because the server cannot see the user's
+ * clock. That made "back at 12:00 am" mean midnight in London, and the 9:00
+ * expiry nudge arrive at 14:30 in Delhi. The browser knows; tell the profile
+ * once, and only while it still holds the default, so a zone someone chose
+ * on the profile screen is never overwritten.
+ */
+function useSyncTimeZone() {
+  useEffect(() => {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (!zone || zone === 'UTC') return;
+    // The server applies it only while the profile is still UTC, in one
+    // write that touches nothing else.
+    api.adoptTimeZone(zone).catch(() => {
+      // Nothing breaks in UTC; it is only less local. Try again next load.
+    });
+  }, []);
 }

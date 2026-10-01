@@ -91,6 +91,25 @@ apiRoutes.put('/api/profile', requireSession, async (c) => {
   return c.json({ profile });
 });
 
+/**
+ * The browser's time zone, adopted only while the profile still holds the
+ * UTC default. Its own route rather than a profile PUT, because a full
+ * replace from the client could undo a change made in the meantime.
+ */
+apiRoutes.put('/api/profile/time-zone', requireSession, async (c) => {
+  const body = (await c.req.json().catch(() => null)) as { timeZone?: unknown } | null;
+  const zone = typeof body?.timeZone === 'string' ? body.timeZone : '';
+  let valid = zone.length > 0 && zone.length <= 64;
+  try {
+    if (valid) new Intl.DateTimeFormat('en', { timeZone: zone });
+  } catch {
+    valid = false;
+  }
+  if (!valid) return fail('validation_failed', 'That is not a time zone.', c.get('requestId'));
+  const profile = await kitchenAgent(c.env, c.get('user').id).adoptTimeZone(zone);
+  return c.json({ profile });
+});
+
 /* --------------------------------- pantry --------------------------------- */
 
 apiRoutes.get('/api/pantry', requireSession, async (c) => {
