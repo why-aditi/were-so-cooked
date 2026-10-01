@@ -110,6 +110,8 @@ export interface PantryOps {
       swaps: Swap[];
       have: string[];
       missing: string[];
+      /** The safety engine's warnings, passed through as suggest_recipes does. */
+      advisories: string[];
     }[];
     hidden: { title: string; reason: string }[];
   }>;
@@ -642,6 +644,7 @@ export function buildTools(ops: PantryOps): ToolSet {
             have: r.have,
             missing: r.missing,
             swaps: r.swaps.map((w) => ({ from: w.fromName, to: w.toName, why: w.explanation })),
+            advisories: r.advisories,
             creator: r.recipe.creator,
             sourceUrl: r.recipe.sourceUrl,
           })),

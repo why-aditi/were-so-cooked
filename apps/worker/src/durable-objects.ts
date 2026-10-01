@@ -4,6 +4,7 @@ import {
   type DenyReason,
   type LedgerEntry,
   type Pool,
+  MAX_RESERVATION_TTL_MS,
   RESERVATION_TTL_MS,
   decide,
   expired,
@@ -109,6 +110,12 @@ export class BudgetKeeper extends DurableObject<Env> {
     pool?: Pool;
     estimate: number;
     isDemo?: boolean;
+    /**
+     * How long the hold lasts before it is swept as abandoned. Defaults to
+     * the five minutes one AI call needs; a multi-step Workflow that settles
+     * at the end asks for longer, capped so a crashed run still lets go.
+     */
+    ttlMs?: number;
   }): Promise<ReserveResult> {
     const now = Date.now();
     const entries = this.sweep(this.load(now), now);
@@ -131,7 +138,7 @@ export class BudgetKeeper extends DurableObject<Env> {
       request.estimate,
       'reserved',
       now,
-      now + RESERVATION_TTL_MS,
+      now + Math.min(MAX_RESERVATION_TTL_MS, Math.max(RESERVATION_TTL_MS, req.ttlMs ?? 0)),
     );
     return { ok: true, reservationId: id, estimate: request.estimate };
   }
@@ -165,9 +172,12 @@ export class BudgetKeeper extends DurableObject<Env> {
       return { neurons, reservationFound: true };
     }
 
+    // Recorded under the id it was committed with, not a fresh one, so a
+    // caller that retries a commit — a Workflow step, say — updates this row
+    // the second time instead of charging the same spend twice.
     this.ctx.storage.sql.exec(
       "INSERT INTO ledger (id, user_id, pool, neurons, state, created_at, expires_at) VALUES (?, ?, ?, ?, 'committed', ?, NULL)",
-      crypto.randomUUID(),
+      reservationId,
       call.userId ?? 'unknown',
       call.pool ?? 'user',
       neurons,

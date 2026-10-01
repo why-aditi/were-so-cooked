@@ -1,4 +1,4 @@
-import { SELF, env } from 'cloudflare:test';
+import { SELF, env, runInDurableObject } from 'cloudflare:test';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { BudgetStatus } from '../src/budget/policy.js';
 import type { ReserveResult } from '../src/durable-objects.js';
@@ -22,6 +22,7 @@ interface Keeper {
     pool?: 'user' | 'viral';
     estimate: number;
     isDemo?: boolean;
+    ttlMs?: number;
   }): Promise<ReserveResult>;
   commit(
     id: string,
@@ -93,6 +94,45 @@ describe('reserve then commit', () => {
     // them. Dropping them is how an account quietly overruns.
     const status = await k.status('unknown');
     expect(status.account.used).toBeGreaterThan(70);
+  });
+
+  it('charges a retried commit once, not twice', async () => {
+    // A Workflow step that commits and then fails is retried, and commits
+    // again under the same id. The second must update, not add.
+    const k = keeper(freshName());
+    const usage = { promptTokens: 2_392, completionTokens: 40 };
+    await k.commit('run-1:filter', { model: LLAMA, usage });
+    const again = await k.commit('run-1:filter', { model: LLAMA, usage });
+    expect(again.reservationFound).toBe(true);
+
+    const used = (await k.status('unknown')).account.used;
+    expect(used).toBeGreaterThan(70);
+    expect(used).toBeLessThan(74);
+  });
+
+  it('lets a long run hold its reservation longer, but not indefinitely', async () => {
+    const name = freshName();
+    const k = keeper(name);
+    const before = Date.now();
+    const held = (await k.reserve({ userId: 'u1', estimate: 100, ttlMs: 30 * 60 * 1000 })) as {
+      ok: true;
+      reservationId: string;
+    };
+    const forever = (await k.reserve({ userId: 'u1', estimate: 100, ttlMs: 7 * 86_400_000 })) as {
+      ok: true;
+      reservationId: string;
+    };
+
+    const stub = env.BUDGET_KEEPER.get(env.BUDGET_KEEPER.idFromName(name));
+    await runInDurableObject(stub, async (_instance, state) => {
+      const expiry = (id: string) =>
+        (state.storage.sql.exec('SELECT expires_at FROM ledger WHERE id = ?', id).toArray()[0] as {
+          expires_at: number;
+        }).expires_at;
+      expect(expiry(held.reservationId) - before).toBeGreaterThanOrEqual(30 * 60 * 1000);
+      // Capped at two hours, so a run that died still lets go of the pool.
+      expect(expiry(forever.reservationId) - before).toBeLessThanOrEqual(2 * 60 * 60 * 1000 + 5_000);
+    });
   });
 
   it('release gives the budget back', async () => {

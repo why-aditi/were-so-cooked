@@ -168,7 +168,13 @@ export function workersAiVision(env: Env): VisionRunner {
 /* ------------------------------- BudgetKeeper ------------------------------ */
 
 interface KeeperStub {
-  reserve(req: { userId: string; estimate: number; isDemo?: boolean; pool?: Pool }): Promise<
+  reserve(req: {
+    userId: string;
+    estimate: number;
+    isDemo?: boolean;
+    pool?: Pool;
+    ttlMs?: number;
+  }): Promise<
     | { ok: true; reservationId: string; estimate: number }
     | { ok: false; reason: string; message: string; left: number }
   >;

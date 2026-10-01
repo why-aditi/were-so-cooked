@@ -7,6 +7,7 @@ import {
 import { NonRetryableError } from 'cloudflare:workflows';
 import type { MealSlot, PipelineRun, ScanItem } from '@cooked/shared';
 import { budgetKeeper, workersAiRunner, workersAiVision } from './agent/adapters.js';
+import { VIRAL_USER_ID } from './budget/policy.js';
 import type { KitchenAgent } from './agent/kitchen-agent.js';
 import type { Env } from './env.js';
 import { type TokenUsage, neuronsFor } from './budget/rates.js';
@@ -504,8 +505,11 @@ export interface ViralRecipesParams {
 /** Section 6: "Reserve about 2,500 neurons" — the whole Sunday viral pool. */
 const VIRAL_ESTIMATE_NEURONS = 2_500;
 
-/** The ledger's user id for a run nobody in particular started. */
-const VIRAL_LEDGER_USER = 'system:viral';
+/**
+ * The run settles at the end, so its hold has to outlast thirty extraction
+ * steps rather than the five minutes one AI call gets. BudgetKeeper caps it.
+ */
+const VIRAL_HOLD_MS = 2 * 60 * 60 * 1000;
 
 export interface ViralRecipesOutcome {
   status: PipelineRun['status'];
@@ -518,10 +522,15 @@ export interface ViralRecipesOutcome {
  * `ViralRecipesWorkflow` from section 6.
  *
  * Open the run row, reserve, discover, filter in batches, extract one video
- * per step, then dedupe, store and close the row. The decisions — what a
- * video is worth, what counts as a duplicate, what a stored recipe may claim
- * — live in `viral/pipeline.ts` as pure phases; this class only puts them on
- * a durable schedule, so a failed extraction reruns one video, not the run.
+ * per step, dedupe, store, then close the row. The decisions — what a video
+ * is worth, what counts as a duplicate, what a stored recipe may claim — live
+ * in `viral/pipeline.ts` as pure phases; this class only puts them on a
+ * durable schedule, so a failed extraction reruns one video, not the run.
+ *
+ * Budget: one reservation held for the whole run, settled once at the end
+ * with what was actually spent — on the failure path too. Every commit is
+ * keyed to this run, so a retried settle updates its rows rather than
+ * charging twice.
  *
  * ponytail: section 6's embed step (Vectorize upsert, the 0.92 similarity
  * dedupe) is not here yet. D1's UNIQUE `content_hash` is the authoritative
@@ -543,14 +552,48 @@ export class ViralRecipesWorkflow extends WorkflowEntrypoint<Env, ViralRecipesPa
 
     let reservation: string | null = null;
     const errors: string[] = [];
+    const filterUsage: TokenUsage = { promptTokens: 0, completionTokens: 0 };
+    const extractUsage: TokenUsage = { promptTokens: 0, completionTokens: 0 };
+
+    // Runs inside a step on both paths. Two models at two rates, so two
+    // ledger rows: the reservation takes the extraction spend, and the
+    // filter spend is its own row under an id derived from the run.
+    const settle = async () => {
+      const keeper = budgetKeeper(this.env);
+      if (reservation) {
+        if (spent(extractUsage)) {
+          await keeper.commit(reservation, {
+            model: EXTRACT_MODEL,
+            usage: extractUsage,
+            userId: VIRAL_USER_ID,
+            pool: 'viral',
+          });
+        } else {
+          await keeper.release(reservation);
+        }
+      }
+      if (spent(filterUsage)) {
+        await keeper.commit(`${runId}:filter`, {
+          model: FILTER_MODEL,
+          usage: filterUsage,
+          userId: VIRAL_USER_ID,
+          pool: 'viral',
+        });
+      }
+    };
+
     const fail = async (reason: string): Promise<ViralRecipesOutcome> => {
       await step.do('close run as failed', async () => {
-        if (reservation) await budgetKeeper(this.env).release(reservation);
+        await settle();
         await closeRun(
           this.env.DB,
           runId,
           'failed',
-          { ...EMPTY_COUNTS, errors: [reason, ...errors].slice(0, MAX_ERRORS) },
+          {
+            ...EMPTY_COUNTS,
+            neurons: neuronsFor(FILTER_MODEL, filterUsage) + neuronsFor(EXTRACT_MODEL, extractUsage),
+            errors: [reason, ...errors].slice(0, MAX_ERRORS),
+          },
           new Date().toISOString(),
         );
         return true;
@@ -563,7 +606,7 @@ export class ViralRecipesWorkflow extends WorkflowEntrypoint<Env, ViralRecipesPa
       // ---- Preconditions and reservation --------------------------------
       //
       // The preconditions are checked before reserving, so a missing key
-      // does not hold the Sunday pool for five minutes on its way to failing.
+      // does not hold the Sunday pool on its way to failing.
       //
       // Section 6: "If the reservation is refused, the run ends as
       // `deferred`". `pipeline_runs.status` has no such value, so a deferred
@@ -574,9 +617,10 @@ export class ViralRecipesWorkflow extends WorkflowEntrypoint<Env, ViralRecipesPa
         }
         if (!this.env.AI) return { ok: false as const, reason: 'No Workers AI binding.' };
         const r = await budgetKeeper(this.env).reserve({
-          userId: VIRAL_LEDGER_USER,
+          userId: VIRAL_USER_ID,
           pool: 'viral',
           estimate: VIRAL_ESTIMATE_NEURONS,
+          ttlMs: VIRAL_HOLD_MS,
         });
         return r.ok
           ? { ok: true as const, id: r.reservationId }
@@ -604,7 +648,6 @@ export class ViralRecipesWorkflow extends WorkflowEntrypoint<Env, ViralRecipesPa
 
       // ---- Filter, ten videos a step ------------------------------------
       const keep: VideoCandidate[] = [];
-      const filterUsage: TokenUsage = { promptTokens: 0, completionTokens: 0 };
       for (let start = 0; start < discovered.candidates.length; start += FILTER_BATCH) {
         const batch = discovered.candidates.slice(start, start + FILTER_BATCH);
         const result = await step.do(`filter ${String(start / FILTER_BATCH + 1)}`, AI_STEP, () =>
@@ -620,7 +663,6 @@ export class ViralRecipesWorkflow extends WorkflowEntrypoint<Env, ViralRecipesPa
       // Past the cap is left out of `seen_videos`: never processed, so next
       // week's run can still use it.
       const queue = keep.slice(0, MAX_RECIPES);
-      const extractUsage: TokenUsage = { promptTokens: 0, completionTokens: 0 };
       const judged: JudgedVideo[] = [];
       let extracted = 0;
       for (const video of queue) {
@@ -636,21 +678,33 @@ export class ViralRecipesWorkflow extends WorkflowEntrypoint<Env, ViralRecipesPa
         addUsage(extractUsage, result.usage);
         if (result.extracted) extracted += 1;
         judged.push(result.judged);
+        if (result.judged.outcome !== 'built') errors.push(result.judged.error);
       }
 
-      // ---- Dedupe, store, record ----------------------------------------
-      const stored = await step.do('store', async () => {
-        const built = judged.flatMap((j) =>
-          j.outcome === 'built' ? [{ videoId: j.videoId, recipe: j.recipe }] : [],
-        );
-        const known = await knownContentHashes(
-          this.env.DB,
-          built.map((b) => b.recipe.contentHash),
-        );
-        const deduped = dedupe(built, known);
-        // Idempotent on `content_hash`, so a retried step cannot duplicate.
-        for (const recipe of deduped.recipes) await saveRecipe(this.env.DB, recipe);
+      // ---- Dedupe -------------------------------------------------------
+      //
+      // Its own step, before anything is written, so the verdict is decided
+      // once. Folded into the store step, a retry after a partial write
+      // would find this run's own recipes in the catalog and relabel them
+      // duplicates.
+      const built = judged.flatMap((j) =>
+        j.outcome === 'built' ? [{ videoId: j.videoId, recipe: j.recipe }] : [],
+      );
+      const deduped = await step.do('dedupe', async () =>
+        dedupe(
+          built,
+          await knownContentHashes(
+            this.env.DB,
+            built.map((b) => b.recipe.contentHash),
+          ),
+        ),
+      );
 
+      // ---- Store --------------------------------------------------------
+      await step.do('store', async () => {
+        // Both writes are idempotent — `content_hash` is UNIQUE and
+        // `seen_videos` keeps its first verdict — so a retry is harmless.
+        for (const recipe of deduped.recipes) await saveRecipe(this.env.DB, recipe);
         const outcomes: [string, VideoOutcome][] = [
           ...filteredOut(discovered.candidates, keep),
           ...judged.flatMap((j): [string, VideoOutcome][] =>
@@ -662,51 +716,42 @@ export class ViralRecipesWorkflow extends WorkflowEntrypoint<Env, ViralRecipesPa
           this.env.DB,
           outcomes.map(([videoId, outcome]) => ({ videoId, firstSeen: startedAt, outcome })),
         );
-        return { added: deduped.recipes.length, duplicates: deduped.duplicates };
+        return true;
       });
 
-      for (const j of judged) if (j.outcome !== 'built') errors.push(j.error);
-
-      // ---- Close the run and settle the budget --------------------------
+      // ---- Settle and close ---------------------------------------------
       const counts: RunCounts = {
         found: discovered.found,
         filtered: keep.length,
         extracted,
-        added: stored.added,
-        duplicates: stored.duplicates,
+        added: deduped.recipes.length,
+        duplicates: deduped.duplicates,
         neurons: neuronsFor(FILTER_MODEL, filterUsage) + neuronsFor(EXTRACT_MODEL, extractUsage),
         errors: errors.slice(0, MAX_ERRORS),
       };
       await step.do('close run', async () => {
-        const keeper = budgetKeeper(this.env);
-        // Two models at two rates, so two ledger rows: the reservation takes
-        // the extraction spend, and the filter spend is its own entry.
-        await keeper.commit(reserved.id, {
-          model: EXTRACT_MODEL,
-          usage: extractUsage,
-          userId: VIRAL_LEDGER_USER,
-          pool: 'viral',
-        });
-        if (filterUsage.promptTokens + filterUsage.completionTokens > 0) {
-          await keeper.commit(`${runId}:filter`, {
-            model: FILTER_MODEL,
-            usage: filterUsage,
-            userId: VIRAL_LEDGER_USER,
-            pool: 'viral',
-          });
-        }
+        await settle();
         await closeRun(this.env.DB, runId, 'ok', counts, new Date().toISOString());
         return true;
       });
 
-      console.log(JSON.stringify({ event: 'viral_run', runId, status: 'ok', ...counts, errors: counts.errors.length }));
-      return { status: 'ok', added: counts.added, duplicates: counts.duplicates, errors: counts.errors.length };
+      console.log(
+        JSON.stringify({ event: 'viral_run', runId, status: 'ok', ...counts, errors: counts.errors.length }),
+      );
+      return {
+        status: 'ok',
+        added: counts.added,
+        duplicates: counts.duplicates,
+        errors: counts.errors.length,
+      };
     } catch (e) {
       await fail(e instanceof Error ? e.message : String(e));
       throw e;
     }
   }
 }
+
+const spent = (u: TokenUsage): boolean => u.promptTokens + u.completionTokens > 0;
 
 const EMPTY_COUNTS: RunCounts = {
   found: 0,

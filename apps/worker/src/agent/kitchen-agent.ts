@@ -703,6 +703,8 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
       swaps: Swap[];
       have: string[];
       missing: string[];
+      /** The safety engine's warnings, passed through as suggest_recipes does. */
+      advisories: string[];
     }[];
     hidden: { title: string; reason: string }[];
   }> {
@@ -739,7 +741,13 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
       for (const i of gated.recipe.ingredients) {
         (i.canonicalId && stocked.has(i.canonicalId) ? have : missing).push(i.name);
       }
-      results.push({ recipe: gated.recipe, swaps: gated.swaps, have, missing });
+      results.push({
+        recipe: gated.recipe,
+        swaps: gated.swaps,
+        have,
+        missing,
+        advisories: gated.advisories,
+      });
     }
     return { results, hidden };
   }
