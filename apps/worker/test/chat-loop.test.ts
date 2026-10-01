@@ -322,6 +322,30 @@ describe('a turn always ends in words', () => {
     expect(offered[1]).toContain('remove_pantry_items');
   });
 
+  it('reminds the replying step how to talk, and hides item ids from the model', async () => {
+    // Production: "The function `add_pantry_items` has added two items… The
+    // ids for these items are "0904…" and "230e…" respectively."
+    const prompts: unknown[] = [];
+    await withAgent(
+      recordingModel(
+        (c) => prompts.push(c.prompt),
+        calls('add_pantry_items', { text: '1kg paneer, 6 eggs' }),
+        says('stocked 🧀'),
+      ),
+      async (agent) => {
+        await agent.saveMessages(userMessage('bought 1kg paneer, 6 eggs'));
+      },
+    );
+    expect(systemTextOf(prompts[0])).not.toContain('NOW REPLY');
+    expect(systemTextOf(prompts[1])).toContain('NOW REPLY');
+
+    const toolResult = JSON.stringify(
+      (prompts[1] as { role: string }[]).filter((m) => m.role === 'tool'),
+    );
+    expect(toolResult).toContain('paneer');
+    expect(toolResult).not.toMatch(/"id"/);
+  });
+
   it('still suggests after a pantry update when the message asked for food', async () => {
     const offered: string[][] = [];
     await withAgent(

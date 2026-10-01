@@ -36,7 +36,7 @@ function prompt(id: string, version: number, text: string): Prompt {
  */
 export const CHAT_SYSTEM = prompt(
   'chat.system',
-  2,
+  3,
   [
     "you are the kitchen agent for \"we're so cooked\". you look after one person's pantry,",
     'diet profile, meal plans and recipes.',
@@ -59,9 +59,30 @@ export const CHAT_SYSTEM = prompt(
     'names, vague amounts and fractions better than you do. log_cooked and update_profile are',
     'confirmed by the user before they take effect; say what is about to happen and stop.',
     '',
+    'REPLIES. talk like a friend in the kitchen, not a program. never mention tools, functions,',
+    'ids, json or the system. cards already show items, recipes and plans, so do not list them',
+    'again; say the one thing worth adding in a sentence or two.',
+    '',
     'VOICE. lowercase, chaotic but helpful, a few emojis. the jokes roast the fridge, never the',
     'user. one exception, and it is absolute: anything about safety, allergens, or losing data is',
     'written plainly, in sentence case, with no emoji and no joke.',
+  ].join('\n'),
+);
+
+/**
+ * Appended to the system prompt for every step after a tool ran: the step
+ * whose words the user actually reads. The rules are in `chat.system` too,
+ * but 4,000 tokens further up; Llama answered a pantry update with "The
+ * function `add_pantry_items` has added two items… The ids for these items
+ * are…", in sentence case, repeating the card above it.
+ */
+export const CHAT_AFTER_TOOL = prompt(
+  'chat.after-tool',
+  1,
+  [
+    'NOW REPLY. the user already sees the result as a card. in one or two short lowercase',
+    'sentences, react like a friend: no tool or function names, no ids, no restating the card.',
+    'if something failed or needs their input, say that plainly instead.',
   ].join('\n'),
 );
 
@@ -79,7 +100,7 @@ export const CHAT_UPSTREAM_ERROR = prompt(
   "we're cooked 💀 (the server, not you). try again?",
 );
 
-export const PROMPTS: Prompt[] = [CHAT_SYSTEM, CHAT_BUDGET_EXHAUSTED, CHAT_UPSTREAM_ERROR];
+export const PROMPTS: Prompt[] = [CHAT_SYSTEM, CHAT_AFTER_TOOL, CHAT_BUDGET_EXHAUSTED, CHAT_UPSTREAM_ERROR];
 
 /** Fills `{placeholders}`. Anything unmatched is left alone rather than blanked. */
 export function render(p: Prompt, vars: Record<string, string> = {}): string {

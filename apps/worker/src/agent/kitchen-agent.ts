@@ -1,6 +1,6 @@
 import { AIChatAgent, type OnChatMessageOptions } from '@cloudflare/ai-chat';
 import type { SubstitutionRow, Taxonomy } from '@cooked/safety';
-import { CHAT_SYSTEM } from '@cooked/prompts';
+import { CHAT_AFTER_TOOL, CHAT_SYSTEM } from '@cooked/prompts';
 import type {
   CookingLogEntry,
   MealSlot,
@@ -988,10 +988,15 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
       })(modelId as never);
 
     const tools = buildTools(this);
+    // After a tool runs, the next step is the one whose words the user reads,
+    // so it gets the reply rules again at the bottom of the prompt.
+    const afterTool = `${system}\n\n${CHAT_AFTER_TOOL.text}`;
     const result = streamText({
       model,
       system,
-      messages: await convertToModelMessages(this.messages),
+      // With the tools, so earlier turns' results go through each tool's
+      // toModelOutput too — no item ids for the model to read back out.
+      messages: await convertToModelMessages(this.messages, { tools }),
       tools,
       // The SDK runs tools and loops back for the answer. Bounded so a model
       // that keeps reaching for tools cannot spin through the budget.
@@ -1005,10 +1010,14 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
       // SDK does not enforce it. Leaving them out also drops ~2,800 tokens of
       // definitions from a step that cannot use them.
       prepareStep: ({ stepNumber, steps }) => {
-        if (mustAnswer(stepNumber, steps)) return { activeTools: [], toolChoice: 'none' as const };
+        const instructions = stepNumber > 0 ? { instructions: afterTool } : {};
+        if (mustAnswer(stepNumber, steps)) {
+          return { ...instructions, activeTools: [], toolChoice: 'none' as const };
+        }
         const held = unaskedFoodTools(steps, userText);
-        if (held.length === 0) return {};
+        if (held.length === 0) return instructions;
         return {
+          ...instructions,
           activeTools: (Object.keys(tools) as (keyof typeof tools)[]).filter(
             (name) => !held.includes(name),
           ),
