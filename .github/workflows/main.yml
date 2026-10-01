@@ -78,10 +78,20 @@ jobs:
         run: pnpm exec wrangler d1 migrations apply cooked-db --remote --env production
 
       - name: Deploy
+        id: deploy
         run: pnpm exec wrangler deploy --env production
+
+      # The URL is only known once the first deploy has printed it, so until
+      # the PRODUCTION_URL repository variable is set the smoke tests are
+      # skipped out loud rather than run against an empty host — which would
+      # fail a good deploy and roll it back.
+      - name: PRODUCTION_URL not set
+        if: env.PROD_URL == ''
+        run: echo "::warning::Smoke tests skipped. Set the PRODUCTION_URL repository variable to the URL the Deploy step printed."
 
       - name: Smoke test — /healthz
         id: smoke_health
+        if: env.PROD_URL != ''
         run: |
           for i in 1 2 3 4 5; do
             code=$(curl -sS -o /tmp/health.json -w '%{http_code}' "$PROD_URL/healthz" || echo 000)
@@ -103,6 +113,7 @@ jobs:
       # The endpoint answering with its own rate limit is proof it is alive,
       # which is what a smoke test asks.
       - name: Smoke test — demo flow
+        if: env.PROD_URL != ''
         run: |
           code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$PROD_URL/auth/demo"             -H 'content-type: application/json' -H "origin: $PROD_URL" || echo 000)
           case "$code" in
@@ -115,23 +126,30 @@ jobs:
       # after the deploy. Without `E2E_LIVE_AI`, so the chat-turn specs skip
       # and a deploy spends no neurons.
       - name: Install Playwright browsers
+        if: env.PROD_URL != ''
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Smoke test — end to end
         id: smoke_e2e
+        if: env.PROD_URL != ''
         env:
           E2E_BASE_URL: ${{ vars.PRODUCTION_URL }}
         run: pnpm e2e --project=desktop
 
       # Only fires if a smoke test above failed. Rolling back to an empty
       # version id would be worse than leaving the bad deploy up and visible.
+      #
+      # Both rollback steps need the deploy to have succeeded. A failed
+      # migration or deploy changed nothing that is live, and announcing
+      # "production may be broken" then sends someone chasing the wrong
+      # problem.
       - name: Roll back
-        if: failure() && steps.current.outputs.version_id != ''
+        if: failure() && steps.deploy.outcome == 'success' && steps.current.outputs.version_id != ''
         run: |
           echo "::error::Smoke test failed — rolling back to ${{ steps.current.outputs.version_id }}"
           pnpm exec wrangler rollback "${{ steps.current.outputs.version_id }}" --env production --message "Automatic rollback: smoke test failed for ${{ github.sha }}"
           curl -sS -o /dev/null -w 'post-rollback /healthz: %{http_code}\n' "$PROD_URL/healthz" || true
 
       - name: Rollback not possible
-        if: failure() && steps.current.outputs.version_id == ''
+        if: failure() && steps.deploy.outcome == 'success' && steps.current.outputs.version_id == ''
         run: echo "::error::Smoke test failed and there is no previous version to roll back to. Production may be broken."
