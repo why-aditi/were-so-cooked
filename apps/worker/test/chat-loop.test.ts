@@ -259,6 +259,47 @@ describe('a tool the model calls', () => {
   });
 });
 
+/* ------------------------------ always answers ----------------------------- */
+
+describe('a turn always ends in words', () => {
+  it('answers after a tool call fails instead of retrying it', async () => {
+    // Production: Llama's doubled arguments made every add_pantry_items call
+    // invalid, and the model retried the identical call until the step limit
+    // — the whole demo budget, and no reply at all.
+    const choices: unknown[] = [];
+    const messages = await withAgent(
+      recordingModel(
+        (c) => choices.push(c.toolChoice),
+        calls('add_pantry_items', { wrong: 'shape' }),
+        says('that did not work, sorry'),
+      ),
+      async (agent) => {
+        await agent.saveMessages(userMessage('bought paneer'));
+        return agent.messages;
+      },
+    );
+
+    expect(choices).toHaveLength(2);
+    expect(choices[1]).toEqual({ type: 'none' });
+    expect(JSON.stringify(messages.at(-1))).toContain('that did not work, sorry');
+  });
+
+  it('takes the tools away on the last allowed step', async () => {
+    const choices: unknown[] = [];
+    await withAgent(
+      // A model that would call a tool forever.
+      recordingModel((c) => choices.push(c.toolChoice), calls('list_pantry', {})),
+      async (agent) => {
+        await agent.saveMessages(userMessage('what do I have'));
+      },
+    );
+
+    expect(choices.length).toBeGreaterThan(1);
+    expect(choices.at(-1)).toEqual({ type: 'none' });
+    expect(choices.slice(0, -1).every((c) => !c || (c as { type: string }).type !== 'none')).toBe(true);
+  });
+});
+
 /* -------------------------------- approval --------------------------------- */
 
 describe('human-in-the-loop approval', () => {

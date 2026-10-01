@@ -1,4 +1,5 @@
 import { useAgentChat } from '@cloudflare/ai-chat/react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { UIMessage } from 'ai';
 import { useAgent } from 'agents/react';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
@@ -88,6 +89,17 @@ export function Chat() {
   const { messages, sendMessage, status, addToolApprovalResponse } = useAgentChat({ agent });
 
   const busy = status === 'submitted' || status === 'streaming';
+
+  // A turn spends budget, and a refused one says the budget is gone, so the
+  // meter refreshes as soon as either finishes rather than on its next
+  // minute-long poll. Without this it read "100% left" beside a reply saying
+  // 31 neurons remained.
+  const queryClient = useQueryClient();
+  const wasBusy = useRef(false);
+  useEffect(() => {
+    if (wasBusy.current && !busy) void queryClient.invalidateQueries({ queryKey: ['budget'] });
+    wasBusy.current = busy;
+  }, [busy, queryClient]);
 
   // Only follow the thread when the newest message changes, not on every
   // streamed token — otherwise a long answer fights anyone scrolling back.

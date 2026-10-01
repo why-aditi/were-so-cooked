@@ -69,6 +69,7 @@ import {
 } from '../plan/record.js';
 import { nextLocalHour } from './schedule-local.js';
 import { AGENT_SCHEMA } from './schema.js';
+import { singleFormatAi } from './stream-format.js';
 import {
   type StoredMemory,
   MAX_MEMORIES,
@@ -102,11 +103,15 @@ const LOW_POWER_THRESHOLD = 0.2;
 const EMBEDDING_MODEL = '@cf/baai/bge-m3';
 
 /**
- * Reserved before a turn. Spike 4 measured 71.6 neurons for a real turn with
- * tools; a tool call adds a second model call, so this covers two with
- * headroom. The commit replaces it with the billed figure moments later.
+ * Reserved before a turn; the commit replaces it with the billed figure.
+ *
+ * Spike 4's 71.6 neurons was one call with a smaller tool list. Production
+ * measured about 4,900 prompt tokens per call with all fifteen tools — about
+ * 2,800 of them are the tool definitions alone — and a normal turn is two
+ * calls: the tool, then the answer. That is about 292 neurons at Llama 3.3's
+ * rate. Reserving less let a turn start that the budget could not cover.
  */
-const TURN_ESTIMATE_NEURONS = 160;
+const TURN_ESTIMATE_NEURONS = 300;
 
 /** Section 5 step 4: tools run server-side, then the model answers once. */
 const MAX_STEPS = 4;
@@ -941,7 +946,9 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
     const model =
       this.modelOverride ??
       createWorkersAI({
-        binding: this.env.AI,
+        // One wire format per stream; see stream-format.ts for the bug this
+        // works around.
+        binding: singleFormatAi(this.env.AI),
         ...(this.env.AI_GATEWAY_ID ? { gateway: { id: this.env.AI_GATEWAY_ID } } : {}),
       })(modelId as never);
 
@@ -953,6 +960,14 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
       // The SDK runs tools and loops back for the answer. Bounded so a model
       // that keeps reaching for tools cannot spin through the budget.
       stopWhen: stepCountIs(MAX_STEPS),
+      // And a turn always ends in words. The last allowed step may not call a
+      // tool, and neither may the step after a tool error: retrying the same
+      // failing call is what spent a demo account's whole day on one turn in
+      // production, ending with no reply at all.
+      prepareStep: ({ stepNumber, steps }) => {
+        const lastFailed = steps.at(-1)?.content.some((part) => part.type === 'tool-error') ?? false;
+        return stepNumber >= MAX_STEPS - 1 || lastFailed ? { toolChoice: 'none' as const } : {};
+      },
       onFinish: async (event) => {
         const usage: TokenUsage = {
           promptTokens: event.totalUsage?.inputTokens ?? 0,
