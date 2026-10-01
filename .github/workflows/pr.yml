@@ -122,8 +122,12 @@ jobs:
 
       # A versioned upload does not take production traffic; it returns its own
       # preview URL. Staging's bindings stay untouched by an unmerged PR.
+      # `shell: bash` is not the default it looks like: it adds `-o pipefail`.
+      # Without it the pipeline below exits with `tee`'s status, so a failed
+      # upload reported green and the PR looked deployable when it was not.
       - name: Upload preview version to staging
         id: deploy
+        shell: bash
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
