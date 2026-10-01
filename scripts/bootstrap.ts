@@ -70,6 +70,26 @@ function wrangler(args: string[]): { ok: boolean; out: string } {
   return { ok: r.status === 0, out: `${r.stdout ?? ''}${r.stderr ?? ''}` };
 }
 
+/**
+ * The line that says what went wrong.
+ *
+ * wrangler ends a failure with a "report this at github.com/…" footer and a
+ * log-file path, so the tail of its output is the one part guaranteed not to
+ * be the error. Its own `✘ [ERROR]` line is, and the message carries on for a
+ * line or two after it.
+ */
+function errorLine(out: string): string {
+  const lines = out.split(/\r?\n/).map((l) => l.trim());
+  const at = lines.findIndex((l) => /\[ERROR\]/.test(l));
+  if (at === -1) return out.trim().slice(-300);
+  return lines
+    .slice(at, at + 4)
+    .filter((l) => l && !/^If you think this is a bug|^🪵/.test(l))
+    .join(' ')
+    .replace(/^✘?\s*\[ERROR\]\s*/, '')
+    .slice(0, 400);
+}
+
 /** "already exists" is success for an idempotent script. */
 const alreadyExists = (out: string) =>
   /already exists|duplicate|already been taken|10001|already created/i.test(out);
@@ -143,14 +163,25 @@ function createR2(name: string): boolean {
   }
 
   // Section 4: objects are deleted when a scan finishes, with a 1-day
-  // lifecycle rule as the backstop. Re-adding the same rule id is a no-op.
+  // lifecycle rule as the backstop.
+  //
+  // Read before write. `lifecycle add` fetches the bucket's rules, appends
+  // this one and writes them all back, so a second run sends a duplicate
+  // rule id and the API rejects the whole set — it is not a no-op.
+  const RULE = 'expire-uploads-1d';
+  const listed = wrangler(['r2', 'bucket', 'lifecycle', 'list', name]);
+  if (listed.ok && listed.out.includes(RULE)) {
+    log('r2 lifecycle', 'uploads/ expires after 1 day (already set)');
+    return true;
+  }
+
   const rule = wrangler([
     'r2',
     'bucket',
     'lifecycle',
     'add',
     name,
-    '--name=expire-uploads-1d',
+    `--name=${RULE}`,
     '--expire-days=1',
     '--prefix=uploads/',
   ]);
@@ -158,7 +189,7 @@ function createR2(name: string): boolean {
     log('r2 lifecycle', 'uploads/ expires after 1 day');
     return true;
   }
-  log('r2 lifecycle', `could not set: ${rule.out.trim().slice(-200)}`);
+  log('r2 lifecycle', `could not set: ${errorLine(rule.out)}`);
   log('r2 lifecycle', 'set it by hand in the dashboard; uploads will accumulate until then');
   return false;
 }
@@ -266,7 +297,7 @@ function loadSeed(env: EnvName, dbName: string): boolean {
     const args = ['d1', 'execute', dbName, '--remote', `--file=${path}`, '--yes'];
     if (env !== 'dev') args.push('--env', env);
     const r = wrangler(args);
-    log('seed', r.ok ? `loaded ${f}` : `FAILED ${f}: ${r.out.trim().slice(-200)}`);
+    log('seed', r.ok ? `loaded ${f}` : `FAILED ${f}: ${errorLine(r.out)}`);
     if (!r.ok) return false;
   }
   return true;
