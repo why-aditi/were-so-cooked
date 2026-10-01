@@ -1,5 +1,6 @@
 import { env, runInDurableObject } from 'cloudflare:test';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { budgetKeeper } from '../src/agent/adapters.js';
 import type { KitchenAgent } from '../src/agent/kitchen-agent.js';
 import { APPROVAL_TOOLS, buildTools } from '../src/agent/tools.js';
 import { calls, mockModel, recordingModel, says, systemTextOf } from './fixtures/model.js';
@@ -492,5 +493,59 @@ describe('the synced state', () => {
       return agent.state;
     });
     expect(state).toMatchObject({ expiringSoonCount: 0, unreadInbox: 0 });
+  });
+});
+
+/* --------------------------------- budget ---------------------------------- */
+
+describe('a turn near the daily cap', () => {
+  /** Spends all but `left` of a signed-in user's 2,000-neuron day. */
+  const spendAllBut = async (userId: string, left: number) => {
+    const r = await budgetKeeper(env).reserve({
+      userId,
+      estimate: 2_000 - left,
+      ttlMs: 60 * 60 * 1000,
+    });
+    expect(r.ok).toBe(true);
+  };
+
+  it('drops to the cheap model rather than refusing', async () => {
+    // Production refused "i want something vegan" with 199 neurons left: a
+    // quarter of the demo day, but under the 300 a full turn reserves.
+    const userId = nextUser();
+    await spendAllBut(userId, 199);
+    const log = vi.spyOn(console, 'log');
+    try {
+      await withAgent(
+        mockModel(says('here you go')),
+        async (agent) => {
+          await agent.saveMessages(userMessage('i want something vegan'));
+        },
+        userId,
+      );
+      const turn = log.mock.calls
+        .map((c) => String(c[0]))
+        .find((line) => line.includes('"chat_turn"'));
+      expect(JSON.parse(turn ?? '{}')).toMatchObject({ lowPower: true });
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it('refuses in the product\'s words, not the ledger\'s', async () => {
+    const userId = nextUser();
+    await spendAllBut(userId, 100);
+    const messages = await withAgent(
+      mockModel(says('should not run')),
+      async (agent) => {
+        await agent.saveMessages(userMessage('i want something vegan'));
+        return agent.messages;
+      },
+      userId,
+    );
+    const reply = JSON.stringify(messages.at(-1));
+    expect(reply).toContain('chef is tired');
+    expect(reply).not.toContain('neurons left');
+    expect(reply).not.toContain('should not run');
   });
 });
