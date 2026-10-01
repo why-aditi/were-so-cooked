@@ -1,4 +1,5 @@
-import type { Recipe, RecipeIngredient } from '@cooked/shared';
+import { createTaxonomy, type Taxonomy } from '@cooked/safety';
+import type { Ingredient, Recipe, RecipeIngredient, Unit } from '@cooked/shared';
 
 /**
  * The shared recipe catalog in D1 (section 4), and the search behind
@@ -204,6 +205,42 @@ export async function loadSubstitutions(db: D1Database): Promise<
     ratioNote: r.ratio_note,
     explanation: r.explanation,
   }));
+}
+
+/**
+ * The ingredient taxonomy from the shared D1 (section 7).
+ *
+ * Shared by the agent, which holds the result for its lifetime, and by the
+ * Workflows, which read it once per step that needs it. ~800 rows is one
+ * small query either way.
+ */
+export async function loadTaxonomy(db: D1Database): Promise<Taxonomy> {
+  const { results } = await db
+    .prepare(
+      'SELECT canonical_id, name, aliases, category, default_unit, default_shelf_days, allergens, diet_flags FROM ingredients',
+    )
+    .all<{
+      canonical_id: string;
+      name: string;
+      aliases: string;
+      category: string;
+      default_unit: string;
+      default_shelf_days: number | null;
+      allergens: string;
+      diet_flags: string;
+    }>();
+
+  const ingredients: Ingredient[] = (results ?? []).map((r) => ({
+    canonicalId: r.canonical_id,
+    name: r.name,
+    aliases: JSON.parse(r.aliases) as string[],
+    category: r.category as Ingredient['category'],
+    defaultUnit: r.default_unit as Unit,
+    defaultShelfDays: r.default_shelf_days,
+    allergens: JSON.parse(r.allergens) as Ingredient['allergens'],
+    dietFlags: JSON.parse(r.diet_flags) as Ingredient['dietFlags'],
+  }));
+  return createTaxonomy(ingredients);
 }
 
 /**

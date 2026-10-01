@@ -16,4 +16,4 @@ Beyond that: real form controls over styled `div`s, a skip link, keyboard-reacha
 
 ## Screens
 
-Every route in section 10's table exists. Chat, pantry, profile, inbox, trending and status are complete against the section 11 API. Plan and grocery render their real (empty) state: both depend on `WeeklyPlanWorkflow`, which is not built, and neither fabricates a week to look finished.
+Every route in section 10's table exists. Chat, pantry, profile, inbox, trending and status are complete against the section 11 API. Plan renders the week `WeeklyPlanWorkflow` wrote, polling only while it is generating, and shows a slot nothing safe could fill as open rather than hiding it. Grocery reads the list derived from that plan. Regenerating a single day is not built yet.

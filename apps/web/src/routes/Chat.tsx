@@ -1,7 +1,7 @@
 import { useAgentChat } from '@cloudflare/ai-chat/react';
 import type { UIMessage } from 'ai';
 import { useAgent } from 'agents/react';
-import { useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import {
   ApprovalCard,
   PantryDiffCard,
@@ -41,13 +41,49 @@ const isToolPart = (part: unknown): part is ToolPart =>
 
 const toolNameOf = (part: ToolPart): string => part.type.replace(/^tool-/, '');
 
+type StepStatus = 'pending' | 'started' | 'done' | 'failed';
+
+/**
+ * Section 11's `plan.progress` broadcasts, by plan id then step name. A
+ * context rather than a prop, because the card that reads it sits three
+ * components below the socket that receives it.
+ */
+const PlanProgress = createContext<Record<string, Record<string, StepStatus>>>({});
+
+function readPlanProgress(data: unknown): { planId: string; step: string; status: StepStatus } | null {
+  if (typeof data !== 'string') return null;
+  try {
+    const event = JSON.parse(data) as { type?: string; planId?: string; step?: string; status?: string };
+    if (event.type !== 'plan.progress' || !event.planId || !event.step) return null;
+    if (event.status !== 'started' && event.status !== 'done' && event.status !== 'failed') return null;
+    return { planId: event.planId, step: event.step, status: event.status };
+  } catch {
+    // The SDK's own frames share this socket; anything that is not ours is
+    // simply not a progress event.
+    return null;
+  }
+}
+
 export function Chat() {
   const { user } = useSession();
   const [scanItems, setScanItems] = useState<Record<string, ScanConfirmItem[]>>({});
   const [uploadError, setUploadError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
-  const agent = useAgent({ agent: 'kitchen-agent', name: user.id });
+  const [planProgress, setPlanProgress] = useState<Record<string, Record<string, StepStatus>>>({});
+
+  const agent = useAgent({
+    agent: 'kitchen-agent',
+    name: user.id,
+    onMessage: (message: MessageEvent) => {
+      const event = readPlanProgress(message.data);
+      if (!event) return;
+      setPlanProgress((current) => ({
+        ...current,
+        [event.planId]: { ...current[event.planId], [event.step]: event.status },
+      }));
+    },
+  });
 
   const { messages, sendMessage, status, addToolApprovalResponse } = useAgentChat({ agent });
 
@@ -93,61 +129,63 @@ export function Chat() {
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex-1 overflow-y-auto px-3 py-4">
-        <div className="mx-auto max-w-[46rem]">
-          {messages.length === 0 ? <EmptyThread /> : null}
+    <PlanProgress.Provider value={planProgress}>
+      <div className="flex h-full flex-col">
+        <div className="flex-1 overflow-y-auto px-3 py-4">
+          <div className="mx-auto max-w-[46rem]">
+            {messages.length === 0 ? <EmptyThread /> : null}
 
-          {messages.map((message: UIMessage) => (
-            <Message
-              key={message.id}
-              message={message}
-              onApprove={(id, approved) => addToolApprovalResponse({ id, approved })}
-            />
-          ))}
+            {messages.map((message: UIMessage) => (
+              <Message
+                key={message.id}
+                message={message}
+                onApprove={(id, approved) => addToolApprovalResponse({ id, approved })}
+              />
+            ))}
 
-          {Object.entries(scanItems).map(([scanId, items]) => (
-            <ScanConfirmCard
-              key={scanId}
-              id={scanId}
-              items={items}
-              pending={false}
-              onToggle={(index) =>
-                setScanItems((current) => ({
-                  ...current,
-                  [scanId]: (current[scanId] ?? []).map((item, i) =>
-                    i === index ? { ...item, selected: !item.selected } : item,
-                  ),
-                }))
-              }
-              onConfirm={async () => {
-                await api.confirmScan(scanId, items as never);
-                setScanItems((current) => {
-                  const next = { ...current };
-                  delete next[scanId];
-                  return next;
-                });
-              }}
-            />
-          ))}
+            {Object.entries(scanItems).map(([scanId, items]) => (
+              <ScanConfirmCard
+                key={scanId}
+                id={scanId}
+                items={items}
+                pending={false}
+                onToggle={(index) =>
+                  setScanItems((current) => ({
+                    ...current,
+                    [scanId]: (current[scanId] ?? []).map((item, i) =>
+                      i === index ? { ...item, selected: !item.selected } : item,
+                    ),
+                  }))
+                }
+                onConfirm={async () => {
+                  await api.confirmScan(scanId, items as never);
+                  setScanItems((current) => {
+                    const next = { ...current };
+                    delete next[scanId];
+                    return next;
+                  });
+                }}
+              />
+            ))}
 
-          {uploadError ? (
-            <p role="alert" className="my-3 text-[0.9rem]" style={{ color: 'var(--text-warn)' }}>
-              {uploadError}
-            </p>
-          ) : null}
+            {uploadError ? (
+              <p role="alert" className="my-3 text-[0.9rem]" style={{ color: 'var(--text-warn)' }}>
+                {uploadError}
+              </p>
+            ) : null}
 
-          <div ref={endRef} />
+            <div ref={endRef} />
+          </div>
         </div>
-      </div>
 
-      <Composer
-        onSend={(text) => sendMessage({ text })}
-        onPhoto={onPhoto}
-        disabled={false}
-        busy={busy}
-      />
-    </div>
+        <Composer
+          onSend={(text) => sendMessage({ text })}
+          onPhoto={onPhoto}
+          disabled={false}
+          busy={busy}
+        />
+      </div>
+    </PlanProgress.Provider>
   );
 }
 
@@ -262,10 +300,21 @@ function ToolCard({
   }
 
   if (name === 'start_weekly_plan') {
-    return <PlanProgressCard id={id} steps={(output.steps as never[]) ?? []} />;
+    return <PlanCard id={id} output={output} />;
   }
 
   return null;
+}
+
+/** The plan progress card, with the tool's initial steps updated live. */
+function PlanCard({ id, output }: { id: string; output: Record<string, unknown> }) {
+  const progress = useContext(PlanProgress);
+  const live = progress[String(output.planId)] ?? {};
+  const steps = ((output.steps as { name: string; status: StepStatus }[]) ?? []).map((step) => ({
+    name: step.name,
+    status: live[step.name] ?? step.status,
+  }));
+  return <PlanProgressCard id={id} steps={steps} />;
 }
 
 /**

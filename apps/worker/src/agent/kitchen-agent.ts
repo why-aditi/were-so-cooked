@@ -1,9 +1,11 @@
 import { AIChatAgent, type OnChatMessageOptions } from '@cloudflare/ai-chat';
-import { createTaxonomy, type SubstitutionRow, type Taxonomy } from '@cooked/safety';
+import type { SubstitutionRow, Taxonomy } from '@cooked/safety';
 import { CHAT_SYSTEM } from '@cooked/prompts';
 import type {
-  Ingredient,
+  CookingLogEntry,
+  MealSlot,
   PantryItem,
+  PlanStatus,
   Profile,
   RecipeIngredient,
   Scan,
@@ -26,7 +28,7 @@ import type { Env } from '../env.js';
 import { CLASSIFY_MODEL, classifyWithModel } from '../normalize/classify.js';
 import { type Classifier, normalizeWithModel } from '../normalize/index.js';
 import { GENERATE_MODEL, generateRecipes, llmProposer } from '../recipes/generate.js';
-import { d1RecipeSearch, loadSubstitutions, saveRecipe } from '../recipes/store.js';
+import { d1RecipeSearch, loadSubstitutions, loadTaxonomy, saveRecipe } from '../recipes/store.js';
 import {
   type SubstituteRequest,
   type SubstituteToolOutcome,
@@ -47,6 +49,21 @@ import {
 } from './deduct.js';
 import { type ExtractedItem } from '../photo/extract.js';
 import { type NormalizeScanResult, confirmPhrase, normalizeScan } from '../photo/scan.js';
+import type { GroceryDiff } from '../plan/grocery.js';
+import type { PlanOutcome } from '../plan/plan.js';
+import {
+  ALL_SLOTS,
+  type PlanContext,
+  type PlanStep,
+  type PlanView,
+  type StoredStatus,
+  emptyPlan,
+  groceryRows,
+  parseStoredPlan,
+  recordFromOutcome,
+  todayIn,
+  viewStatus,
+} from '../plan/record.js';
 import { nextLocalHour } from './schedule-local.js';
 import { AGENT_SCHEMA } from './schema.js';
 import {
@@ -94,6 +111,15 @@ const MAX_STEPS = 4;
 /** Section 5's expiry nudge window. */
 const EXPIRING_SOON_DAYS = 2;
 
+interface PlanRowSql {
+  id: string;
+  week_start: string;
+  status: StoredStatus;
+  workflow_id: string | null;
+  plan: string;
+  created_at: string;
+}
+
 interface PantryRowSql {
   id: string;
   canonical_id: string | null;
@@ -127,7 +153,7 @@ export interface AgentSnapshot {
   pantryCount: number;
   expiringSoonCount: number;
   unreadInbox: number;
-  activePlanStatus: string | null;
+  activePlanStatus: PlanStatus | null;
   neuronsLeftToday: number;
 }
 
@@ -196,32 +222,7 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
    * the right trade while the taxonomy changes weekly, not hourly.
    */
   private async taxonomy(): Promise<Taxonomy> {
-    if (this.taxonomyCache) return this.taxonomyCache;
-    const { results } = await this.env.DB.prepare(
-      'SELECT canonical_id, name, aliases, category, default_unit, default_shelf_days, allergens, diet_flags FROM ingredients',
-    ).all<{
-      canonical_id: string;
-      name: string;
-      aliases: string;
-      category: string;
-      default_unit: string;
-      default_shelf_days: number | null;
-      allergens: string;
-      diet_flags: string;
-    }>();
-
-    const ingredients: Ingredient[] = (results ?? []).map((r) => ({
-      canonicalId: r.canonical_id,
-      name: r.name,
-      aliases: JSON.parse(r.aliases) as string[],
-      category: r.category as Ingredient['category'],
-      defaultUnit: r.default_unit as Unit,
-      defaultShelfDays: r.default_shelf_days,
-      allergens: JSON.parse(r.allergens) as Ingredient['allergens'],
-      dietFlags: JSON.parse(r.diet_flags) as Ingredient['dietFlags'],
-    }));
-
-    this.taxonomyCache = createTaxonomy(ingredients);
+    this.taxonomyCache ??= await loadTaxonomy(this.env.DB);
     return this.taxonomyCache;
   }
 
@@ -1049,33 +1050,244 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
   /* ----------------------------- plan & grocery ----------------------------- */
 
   /**
-   * The active plan, or null.
+   * Opens a plan row and starts `WeeklyPlanWorkflow` (section 6).
    *
-   * Section 4 allows one plan per week; "current" is the newest, which is
-   * the one the screen shows whether it is still generating or already
-   * ready. Nothing writes this table yet — `WeeklyPlanWorkflow` will — so
-   * today this is honestly null rather than a fabricated week.
+   * Lives in the agent rather than the route so the HTTP route and the
+   * `start_weekly_plan` tool share one path, and so the Workflow receives
+   * the user ID from the agent, never from the client (section 9).
+   *
+   * The row is written before the Workflow starts, for the same reason the
+   * scan row is: the caller gets a `planId` it can poll at once. Asking again
+   * while a plan for that week is still generating returns the running one
+   * rather than racing two Workflows into the same row.
    */
-  async currentPlan(): Promise<{
-    id: string;
-    weekStart: string;
-    status: string;
-    plan: unknown;
-    createdAt: string;
-  } | null> {
+  async startWeeklyPlan(options: {
+    weekStart?: string | undefined;
+    slots?: MealSlot[] | undefined;
+    cuisines?: string[] | undefined;
+  } = {}): Promise<{ planId: string; weekStart: string; alreadyRunning: boolean }> {
+    const profile = await this.getProfile();
+    const weekStart = options.weekStart ?? todayIn(profile.timeZone);
+    const slots = ALL_SLOTS.filter((s) => (options.slots ?? ALL_SLOTS).includes(s));
+    const cuisines = options.cuisines ?? [];
+
+    const existing = this.ctx.storage.sql
+      .exec('SELECT id, status FROM plans WHERE week_start = ?', weekStart)
+      .toArray()[0] as unknown as { id: string; status: StoredStatus } | undefined;
+    if (existing?.status === 'generating') {
+      return { planId: existing.id, weekStart, alreadyRunning: true };
+    }
+
+    // Section 4: "One active plan per week." Starting again replaces it, and
+    // its grocery list goes with it — ticks on a list for a plan that no
+    // longer exists would be noise.
+    if (existing) {
+      this.ctx.storage.sql.exec('DELETE FROM grocery_items WHERE plan_id = ?', existing.id);
+      this.ctx.storage.sql.exec('DELETE FROM plans WHERE id = ?', existing.id);
+    }
+
+    const planId = crypto.randomUUID();
+    this.ctx.storage.sql.exec(
+      `INSERT INTO plans (id, week_start, status, workflow_id, plan, created_at)
+       VALUES (?, ?, 'generating', NULL, ?, ?)`,
+      planId,
+      weekStart,
+      JSON.stringify(emptyPlan(slots, cuisines)),
+      nowIso(),
+    );
+
+    try {
+      const instance = await this.env.WEEKLY_PLAN.create({
+        params: { userId: this.userId(), planId, weekStart, slots, cuisines },
+      });
+      this.ctx.storage.sql.exec('UPDATE plans SET workflow_id = ? WHERE id = ?', instance.id, planId);
+    } catch (e) {
+      // Failing loudly here would leave a row that says `generating`
+      // forever, and the screen polls while it does.
+      await this.failPlan(planId, `Could not start planning: ${String(e)}`);
+      throw e;
+    }
+
+    await this.pushState();
+    return { planId, weekStart, alreadyRunning: false };
+  }
+
+  /**
+   * Section 6's load-context step: "profile, pantry, last 14 days of cooking,
+   * top taste memories". Dislikes only — section 7 lets them lower a ranking
+   * and nothing else, so likes and notes would be dead weight in a step
+   * result.
+   */
+  async planContext(): Promise<PlanContext> {
+    const history = this.ctx.storage.sql
+      .exec(
+        'SELECT id, recipe_id, recipe_title, cooked_at, deducted FROM cooking_log WHERE cooked_at >= ? ORDER BY cooked_at DESC',
+        new Date(Date.now() - 14 * 86_400_000).toISOString(),
+      )
+      .toArray() as unknown as {
+      id: string;
+      recipe_id: string | null;
+      recipe_title: string;
+      cooked_at: string;
+      deducted: string;
+    }[];
+
+    return {
+      profile: await this.getProfile(),
+      pantry: await this.listPantry(),
+      history: history.map((r) => ({
+        id: r.id,
+        recipeId: r.recipe_id,
+        recipeTitle: r.recipe_title,
+        cookedAt: r.cooked_at,
+        deducted: JSON.parse(r.deducted) as CookingLogEntry['deducted'],
+      })),
+      dislikes: dislikesFrom(this.tasteMemories()),
+      isDemo: this.getMeta('isDemo') === '1',
+    };
+  }
+
+  /**
+   * Section 11's `plan.progress` broadcast, so an open plan card ticks its
+   * steps off as the Workflow reaches them.
+   *
+   * Best-effort by design: a tab that misses one still sees the finished
+   * plan, because the plan screen reads the row, not the stream.
+   */
+  async planProgress(
+    planId: string,
+    step: PlanStep,
+    status: 'started' | 'done' | 'failed',
+  ): Promise<void> {
+    this.broadcast(JSON.stringify({ type: 'plan.progress', planId, step, status }));
+  }
+
+  /**
+   * Section 6's save-and-notify step: the plan, its grocery list and an
+   * inbox item, written together.
+   *
+   * A plan that has been replaced since the Workflow started is not written
+   * back. Without that check, a slow run for a superseded plan would land
+   * on top of the one the user asked for afterwards.
+   */
+  async savePlan(
+    planId: string,
+    result: {
+      outcome: Pick<PlanOutcome, 'status' | 'days' | 'unfilled' | 'repeated' | 'dropped'>;
+      grocery: GroceryDiff;
+      catalogOnly: boolean;
+    },
+  ): Promise<{ saved: boolean }> {
+    const row = this.planRow(planId);
+    if (!row || row.status !== 'generating') return { saved: false };
+
+    const { status, plan } = recordFromOutcome(
+      parseStoredPlan(row.plan),
+      result.outcome,
+      result.catalogOnly,
+    );
+
+    this.ctx.storage.sql.exec(
+      'UPDATE plans SET status = ?, plan = ? WHERE id = ?',
+      status,
+      JSON.stringify(plan),
+      planId,
+    );
+    this.ctx.storage.sql.exec('DELETE FROM grocery_items WHERE plan_id = ?', planId);
+    for (const item of groceryRows(result.grocery)) {
+      this.ctx.storage.sql.exec(
+        `INSERT INTO grocery_items (id, plan_id, canonical_id, display_name, category, quantity, unit, checked)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 0)`,
+        crypto.randomUUID(),
+        planId,
+        item.canonicalId,
+        item.displayName,
+        item.category,
+        item.quantity,
+        item.unit,
+      );
+    }
+
+    const holes = plan.unfilled.length;
+    this.ctx.storage.sql.exec(
+      `INSERT OR IGNORE INTO inbox (id, kind, title, body, created_at, read_at, dedupe_key)
+       VALUES (?, 'plan_ready', ?, ?, ?, NULL, ?)`,
+      crypto.randomUUID(),
+      // Section 10's "plan ready" copy.
+      "the week is planned. you're not cooked. dinner is. 🍳",
+      holes === 0
+        ? 'every meal is in. the grocery list is ready too.'
+        : `${holes} ${holes === 1 ? 'slot' : 'slots'} had nothing that fits your profile, so ${holes === 1 ? 'it is' : 'they are'} left open.`,
+      nowIso(),
+      `plan-ready:${planId}`,
+    );
+
+    await this.pushState();
+    return { saved: true };
+  }
+
+  /**
+   * The plan could not be built. Section 6: "the run is recorded as failed
+   * or partial, never silently retried" — so the row says so, and the user
+   * hears about it in the inbox rather than watching a spinner forever.
+   */
+  async failPlan(planId: string, reason: string): Promise<void> {
+    const row = this.planRow(planId);
+    if (!row || row.status !== 'generating') return;
+
+    const plan = { ...parseStoredPlan(row.plan), error: reason.slice(0, 500) };
+    this.ctx.storage.sql.exec(
+      "UPDATE plans SET status = 'failed', plan = ? WHERE id = ?",
+      JSON.stringify(plan),
+      planId,
+    );
+    this.ctx.storage.sql.exec(
+      `INSERT OR IGNORE INTO inbox (id, kind, title, body, created_at, read_at, dedupe_key)
+       VALUES (?, 'system', ?, ?, ?, NULL, ?)`,
+      crypto.randomUUID(),
+      "we're cooked 💀 (the server, not you)",
+      'that weekly plan did not come together. try again from the plan screen?',
+      nowIso(),
+      `plan-failed:${planId}`,
+    );
+    this.broadcast(
+      JSON.stringify({ type: 'plan.progress', planId, step: 'saving', status: 'failed' }),
+    );
+    await this.pushState();
+  }
+
+  /**
+   * The plan the screen shows: the one most recently asked for, whether it
+   * is still generating, finished or failed.
+   *
+   * Newest by creation, not latest week. Someone who planned next week from
+   * chat and then pressed "start again" — which plans from today — is
+   * looking for the plan they just asked for, not the later-dated one.
+   */
+  async currentPlan(): Promise<PlanView | null> {
     const row = this.ctx.storage.sql
-      .exec('SELECT * FROM plans ORDER BY week_start DESC LIMIT 1')
-      .toArray()[0] as unknown as
-      | { id: string; week_start: string; status: string; plan: string; created_at: string }
-      | undefined;
+      .exec('SELECT * FROM plans ORDER BY created_at DESC, rowid DESC LIMIT 1')
+      .toArray()[0] as unknown as PlanRowSql | undefined;
     if (!row) return null;
+
+    const plan = parseStoredPlan(row.plan);
     return {
       id: row.id,
       weekStart: row.week_start,
-      status: row.status,
-      plan: JSON.parse(row.plan) as unknown,
+      status: viewStatus(row.status),
+      complete: row.status === 'ready',
+      workflowId: row.workflow_id,
       createdAt: row.created_at,
+      ...plan,
     };
+  }
+
+  private planRow(planId: string): PlanRowSql | null {
+    return (
+      (this.ctx.storage.sql.exec('SELECT * FROM plans WHERE id = ?', planId).toArray()[0] as unknown as
+        | PlanRowSql
+        | undefined) ?? null
+    );
   }
 
   /** The current plan's grocery list. Empty until a plan exists. */
@@ -1095,7 +1307,8 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
 
     const rows = this.ctx.storage.sql
       .exec(
-        'SELECT * FROM grocery_items WHERE plan_id = ? ORDER BY category, display_name',
+        // Uncounted lines ("salt to taste") last within their aisle.
+        'SELECT * FROM grocery_items WHERE plan_id = ? ORDER BY category, (quantity IS NULL), display_name',
         plan.id,
       )
       .toArray() as unknown as {
@@ -1473,9 +1686,7 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
         new Date(Date.now() + EXPIRING_SOON_DAYS * 86_400_000).toISOString(),
       ),
       unreadInbox: count('SELECT COUNT(*) AS n FROM inbox WHERE read_at IS NULL'),
-      // Plans are week 2 (track C); reporting null is honest, reporting
-      // 'ready' would not be.
-      activePlanStatus: null,
+      activePlanStatus: this.activePlanStatus(),
       neuronsLeftToday: await this.neuronsLeft(),
     };
   }
@@ -1501,6 +1712,14 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
   }
 
   /* -------------------------------- helpers -------------------------------- */
+
+  /** The newest plan's status for the synced state, without parsing its JSON. */
+  private activePlanStatus(): PlanStatus | null {
+    const row = this.ctx.storage.sql
+      .exec('SELECT status FROM plans ORDER BY created_at DESC, rowid DESC LIMIT 1')
+      .toArray()[0] as unknown as { status: StoredStatus } | undefined;
+    return row ? viewStatus(row.status) : null;
+  }
 
   private rowById(id: string): PantryRowSql | null {
     const rows = this.ctx.storage.sql

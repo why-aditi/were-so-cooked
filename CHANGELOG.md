@@ -10,7 +10,8 @@ Nothing is released yet, so everything sits under Unreleased. The first tag will
 
 - **Frontend.** React 19 SPA on Vite, Tailwind and React Router: landing page, app shell with a bottom tab bar on phones and a rail from `md`, and every screen in section 10 — chat, pantry, plan, grocery, trending, inbox, profile and pipeline status. Dark theme by default with a light theme.
 - **Chat.** `KitchenAgent` built on `AIChatAgent` from `@cloudflare/ai-chat`, with the SDK's message persistence, resumable streaming, WebSocket transport and human-in-the-loop approvals. All six of section 10's card types render from structured tool output.
-- **Tools.** Ten of section 5's twelve, each with a Zod input schema. `log_cooked` and `update_profile` are gated behind the SDK's approval flow.
+- **Tools.** Every section 5 tool except `search_trending`, each with a Zod input schema. `log_cooked` and `update_profile` are gated behind the SDK's approval flow.
+- **Weekly plans.** `WeeklyPlanWorkflow`: load context, reserve, build, grocery diff, save. Safety-gated, no repeats within 7 days, soon-to-expire stock first, the cook-time limit. A slot nothing safe fits stays open and is reported rather than filled with an invented meal. `POST /api/plans`, the plan screen, the grocery list, a plan-ready inbox item, and live `plan.progress` ticks on the chat card. When the budget refuses the reservation the run goes ahead catalog-only instead of being deferred, because the catalog costs no neurons.
 - **Safety engine.** `packages/safety`: `check()`, `substitute()`, 18 diets, 14 allergens, severity levels. Pure TypeScript, no I/O. The invariant — substitute output either passes check or is dropped — holds by construction and is covered by property tests.
 - **Taxonomy.** 810 hand-reviewed ingredients with aliases including romanized Hindi, plus 92 curated substitutions, authored as TSV and built into JSON and SQL.
 - **Normalizer.** Free text to canonical pantry items: quantities, units, expiry estimates. Handles `a bunch`, `2 packets`, `1.5kg`, `½ cup`, `dhaniya`, `2 pyaaz`. Taxonomy first; the 8B model only for misses, batched into one call.
@@ -52,7 +53,7 @@ Nothing is released yet, so everything sits under Unreleased. The first tag will
 
 ### Known gaps
 
-- `WeeklyPlanWorkflow` and `ViralRecipesWorkflow` are not built. The plan and grocery screens show a real empty state; `POST /api/plans` returns 502 with a reason rather than a fabricated week.
-- Three section 5 tools depend on those Workflows and are deliberately unregistered.
+- `ViralRecipesWorkflow` is not built, so `search_trending` is deliberately unregistered.
+- Regenerating a single plan day is not built; "start again" replans the whole week.
 - Vectorize recipe search is behind a `RecipeSearch` interface but unimplemented — nothing writes embeddings yet.
 - Not deployed, so the README has no live URL.

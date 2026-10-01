@@ -24,9 +24,11 @@ The SDK owns message persistence, resumable streaming, the WebSocket transport a
   - `generate.ts` — inventing a dish and proposing a replacement ingredient, both on the cheap model, both schema-validated and neither trusted.
   - `suggest.ts` — `suggest_recipes` and `substitute`: search, generate, then every candidate through `substitute()` and its unconditional final `check`.
 
-`PhotoScanWorkflow` is implemented; `WeeklyPlanWorkflow` and `ViralRecipesWorkflow` still throw.
+`PhotoScanWorkflow` and `WeeklyPlanWorkflow` are implemented; `ViralRecipesWorkflow` still throws.
 
-Not implemented yet: `start_weekly_plan`, `get_plan` / `get_grocery_list` / `check_grocery_item` and `search_trending`, and the Workflows behind them. They are deliberately not registered — a tool the model can call but the server cannot answer is worse than a missing one.
+- `src/plan/` — the weekly plan: `plan.ts` is the generate, validate and repair loop as a pure function, `grocery.ts` the plan-minus-pantry diff, and `record.ts` how a plan is stored in the agent and shown to the screen. `WeeklyPlanWorkflow` is only the durable shell around them.
+
+Not implemented yet: `search_trending` and `ViralRecipesWorkflow` behind it. It is deliberately not registered — a tool the model can call but the server cannot answer is worse than a missing one.
 
 Tests split two ways. Pure logic runs in the node pool from the repo root (`pnpm vitest run`); anything that needs real Durable Object SQLite, real D1 or the real ledger runs in workerd (`pnpm test:worker`). The workerd suite mocks Workers AI at the provider seam with `MockLanguageModelV4` (`test/fixtures/model.ts`), so the SDK's real turn loop, tool dispatch and approval pause all run.
 

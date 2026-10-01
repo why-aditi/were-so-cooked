@@ -1,5 +1,5 @@
 import { SELF, env } from 'cloudflare:test';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 /**
  * The section 11 routes the section 10 screens are built against.
@@ -254,13 +254,39 @@ describe('plan and grocery', () => {
     expect(body.plan).toBeNull();
   });
 
-  it('says plainly that planning is not built', async () => {
-    // A 502 with a reason beats a 200 with a fabricated plan.
+  it('starts a plan in the background and hands back its id', async () => {
     const user = await demoUser();
-    const res = await send('POST', '/api/plans', user.cookie, {});
-    expect(res.status).toBe(502);
-    const body = (await res.json()) as { error: { message: string } };
-    expect(body.error.message).toContain('not built yet');
+    const res = await send('POST', '/api/plans', user.cookie, { slots: ['dinner'] });
+    expect(res.status).toBe(202);
+    const body = (await res.json()) as { planId: string; status: string };
+    expect(body.status).toBe('running');
+
+    // The row exists before the Workflow does anything, so the id is
+    // pollable at once.
+    const current = (await (await get('/api/plans/current', user.cookie)).json()) as {
+      plan: { id: string; slots: string[] };
+    };
+    expect(current.plan.id).toBe(body.planId);
+    expect(current.plan.slots).toEqual(['dinner']);
+
+    // Then it finishes on its own, the way the plan screen sees it: by
+    // polling until the status moves. Waiting also keeps the run from still
+    // being in flight when this file tears down.
+    await vi.waitFor(
+      async () => {
+        const res = await get('/api/plans/current', user.cookie);
+        const { plan } = (await res.json()) as { plan: { status: string } };
+        expect(plan.status).not.toBe('running');
+      },
+      { timeout: 10_000, interval: 100 },
+    );
+  });
+
+  it('rejects a plan request it cannot read', async () => {
+    const user = await demoUser();
+    const res = await send('POST', '/api/plans', user.cookie, { slots: ['elevenses'] });
+    expect(res.status).toBe(422);
+    await res.text();
   });
 
   it('returns an empty grocery list while there is no plan', async () => {

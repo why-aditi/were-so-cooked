@@ -370,7 +370,7 @@ export function PlanProgressCard({
   steps,
 }: {
   id: string;
-  steps: { name: string; status: 'started' | 'done' | 'failed' }[];
+  steps: { name: string; status: 'pending' | 'started' | 'done' | 'failed' }[];
 }) {
   const done = steps.filter((s) => s.status === 'done').length;
 
@@ -387,10 +387,18 @@ export function PlanProgressCard({
                     ? 'var(--text-go)'
                     : step.status === 'failed'
                       ? 'var(--text-warn)'
-                      : 'var(--text-work)',
+                      : step.status === 'pending'
+                        ? 'var(--text-muted)'
+                        : 'var(--text-work)',
               }}
             >
-              {step.status === 'done' ? '✓' : step.status === 'failed' ? '✕' : '•'}
+              {step.status === 'done'
+                ? '✓'
+                : step.status === 'failed'
+                  ? '✕'
+                  : step.status === 'pending'
+                    ? '·'
+                    : '•'}
             </span>
             <span style={{ color: step.status === 'started' ? 'var(--text-primary)' : 'var(--text-muted)' }}>
               {step.name}

@@ -130,10 +130,7 @@ export const api = {
 
   /* --------------------------- plan, grocery, rest ------------------------- */
 
-  currentPlan: () =>
-    request<{ plan: { id: string; weekStart: string; status: string; plan: unknown } | null }>(
-      '/api/plans/current',
-    ),
+  currentPlan: () => request<{ plan: PlanView | null }>('/api/plans/current'),
 
   startPlan: () =>
     request<{ planId: string }>('/api/plans', {
@@ -160,6 +157,32 @@ export const api = {
 
   pipeline: () => request<{ runs: PipelineRun[] }>('/api/status/pipeline'),
 };
+
+/** `GET /api/plans/current`, as the worker's `PlanView` returns it. */
+export interface PlanView {
+  id: string;
+  weekStart: string;
+  status: 'queued' | 'running' | 'ready' | 'failed';
+  complete: boolean;
+  slots: PlanSlot[];
+  days: { date: string; meals: PlanMealView[] }[];
+  unfilled: { date: string; slot: PlanSlot; reason: string }[];
+  repeated: { date: string; slot: PlanSlot; reason: string }[];
+  dropped: { title: string; reason: string }[];
+  error: string | null;
+  catalogOnly: boolean;
+}
+
+export type PlanSlot = 'breakfast' | 'lunch' | 'dinner' | 'treat';
+
+export interface PlanMealView {
+  slot: PlanSlot;
+  recipeId: string | null;
+  title: string;
+  minutes: number;
+  pantryCoverage: number;
+  swaps: { fromName: string; toName: string; explanation: string }[];
+}
 
 export interface GroceryRow {
   id: string;
