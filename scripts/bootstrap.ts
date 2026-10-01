@@ -90,6 +90,19 @@ function errorLine(out: string): string {
     .slice(0, 400);
 }
 
+/**
+ * Whether a resource list mentions exactly this name.
+ *
+ * Not `\b${name}\b`: a hyphen is a word boundary, so `cooked-recipes`
+ * matched `cooked-recipes-dev` and production was reported as existing
+ * when only dev did. Resource names are letters, digits, `-` and `_`, so
+ * neither neighbour may be one of those.
+ */
+function listsExactly(out: string, name: string): boolean {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(^|[^A-Za-z0-9_-])${escaped}($|[^A-Za-z0-9_-])`, 'm').test(out);
+}
+
 /** "already exists" is success for an idempotent script. */
 const alreadyExists = (out: string) =>
   /already exists|duplicate|already been taken|10001|already created/i.test(out);
@@ -127,7 +140,7 @@ function createD1(name: string): string | null {
 
 function createVectorize(name: string): boolean {
   const list = wrangler(['vectorize', 'list']);
-  if (list.ok && new RegExp(`\\b${name}\\b`).test(list.out)) {
+  if (list.ok && listsExactly(list.out, name)) {
     log('vectorize', `${name} already exists`);
     return true;
   }
@@ -151,7 +164,7 @@ function createVectorize(name: string): boolean {
 
 function createR2(name: string): boolean {
   const list = wrangler(['r2', 'bucket', 'list']);
-  if (list.ok && new RegExp(`\\b${name}\\b`).test(list.out)) {
+  if (list.ok && listsExactly(list.out, name)) {
     log('r2', `${name} already exists`);
   } else {
     const r = wrangler(['r2', 'bucket', 'create', name]);
