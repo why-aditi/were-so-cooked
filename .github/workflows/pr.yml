@@ -132,7 +132,17 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          out=$(pnpm exec wrangler versions upload --env staging 2>&1 | tee /dev/stderr)
+          # A version needs a Worker to be a version of. Before staging's
+          # first `pnpm deploy:staging` there is none, and that one case is
+          # setup still to do rather than a broken PR: say so and skip the
+          # preview. Every other upload failure still fails the step.
+          if ! out=$(pnpm exec wrangler versions upload --env staging 2>&1 | tee /dev/stderr); then
+            if echo "$out" | grep -q 'Worker that does not yet exist'; then
+              echo "::warning::No preview: the staging Worker has never been deployed. Run \`pnpm deploy:staging\` once."
+              exit 0
+            fi
+            exit 1
+          fi
           url=$(echo "$out" | grep -oE 'https://[a-z0-9-]+\.[a-z0-9-]+\.workers\.dev' | head -1)
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
