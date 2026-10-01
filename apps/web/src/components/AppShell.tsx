@@ -46,7 +46,10 @@ export function AppShell() {
   });
 
   return (
-    <div className="min-h-dvh md:flex">
+    // Exactly one screen tall: the page itself never scrolls. Each screen
+    // scrolls inside <main>, and the chat inside its own thread, so the
+    // composer and the rail stay put.
+    <div className="flex h-dvh flex-col overflow-hidden md:flex-row">
       <a href="#main" className="skip-link">
         Skip to content
       </a>
@@ -55,7 +58,7 @@ export function AppShell() {
           bar for anyone listing landmarks. */}
       <nav
         aria-label="Sections"
-        className="hidden md:flex md:w-56 md:shrink-0 md:flex-col md:gap-1 md:border-r-2 md:p-3"
+        className="hidden md:flex md:w-56 md:shrink-0 md:flex-col md:gap-1 md:overflow-y-auto md:border-r-2 md:p-3"
         style={{ borderColor: 'var(--line)' }}
       >
         <p className="mb-4 px-2 font-[family-name:var(--font-display)] text-[1.15rem] font-extrabold leading-none">
@@ -76,7 +79,7 @@ export function AppShell() {
 
       <main
         id="main"
-        className="flex min-w-0 flex-1 flex-col"
+        className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto"
         // Clears the bottom bar on phones; the rail takes over from md up.
         style={{ paddingBottom: 'var(--tabbar-space, 0)' }}
       >

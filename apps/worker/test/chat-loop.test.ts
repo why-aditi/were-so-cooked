@@ -295,6 +295,40 @@ describe('a turn always ends in words', () => {
     expect(JSON.stringify(messages.at(-1))).toContain('that did not work, sorry');
   });
 
+  it('answers a pantry update instead of going on to suggest recipes', async () => {
+    // Production: "bought 1kg paneer, 6 eggs" had Llama chain suggest_recipes
+    // after the pantry write, unasked, and the reply took three minutes.
+    const toolCounts: number[] = [];
+    await withAgent(
+      recordingModel(
+        (c) => toolCounts.push(Array.isArray(c.tools) ? c.tools.length : 0),
+        calls('add_pantry_items', { text: '1kg paneer, 6 eggs' }),
+        says('stocked 🧀'),
+      ),
+      async (agent) => {
+        await agent.saveMessages(userMessage('bought 1kg paneer, 6 eggs'));
+      },
+    );
+    expect(toolCounts).toHaveLength(2);
+    expect(toolCounts[0]).toBeGreaterThan(0);
+    expect(toolCounts[1]).toBe(0);
+  });
+
+  it('still suggests after a pantry update when the message asked for food', async () => {
+    const toolCounts: number[] = [];
+    await withAgent(
+      recordingModel(
+        (c) => toolCounts.push(Array.isArray(c.tools) ? c.tools.length : 0),
+        calls('add_pantry_items', { text: '1kg paneer' }),
+        says('stocked, now ideas'),
+      ),
+      async (agent) => {
+        await agent.saveMessages(userMessage('bought 1kg paneer, what can i make tonight?'));
+      },
+    );
+    expect(toolCounts[1]).toBeGreaterThan(0);
+  });
+
   it('accepts numbers sent as strings, the way Llama sends them', async () => {
     // Production: suggest_recipes {"query": "", "count": "4"} failed the
     // schema and the reply became the call written out as JSON.

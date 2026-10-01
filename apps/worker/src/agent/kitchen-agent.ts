@@ -655,11 +655,30 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
     req: Omit<SuggestRequest, 'pantry' | 'profile'>,
     options: { model?: ModelRunner } = {},
   ): Promise<SuggestOutcome> {
+    const startedAt = Date.now();
     const deps = await this.recipeDeps(options.model);
+    // Where a slow suggestion spends its time: the catalog, the model, or
+    // the safety gate and its swap calls.
+    let generateMs = 0;
+    let attempts = 0;
+    const generate = deps.generate;
+    if (generate) {
+      deps.generate = async (r) => {
+        const t = Date.now();
+        try {
+          const out = await generate(r);
+          attempts = out.attempts;
+          return out;
+        } finally {
+          generateMs = Date.now() - t;
+        }
+      };
+    }
     const outcome = await suggestRecipes(
       { ...req, pantry: await this.listPantry(), profile: await this.getProfile() },
       deps,
     );
+    const suggestedAt = Date.now();
 
     for (const s of outcome.suggestions) {
       if (s.source !== 'generated') continue;
@@ -670,6 +689,19 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
         // cost this user their answer.
       }
     }
+    console.log(
+      JSON.stringify({
+        event: 'suggest',
+        userId: this.userId(),
+        suggestions: outcome.suggestions.length,
+        dropped: outcome.dropped.length,
+        generated: outcome.modelCalled,
+        attempts,
+        generateMs,
+        suggestMs: suggestedAt - startedAt,
+        saveMs: Date.now() - suggestedAt,
+      }),
+    );
     return outcome;
   }
 
@@ -923,6 +955,8 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
     const isDemo = this.getMeta('isDemo') === '1';
     const gate = budgetKeeperGate(this.env, userId, isDemo);
 
+    const startedAt = Date.now();
+
     // Step 2: can they afford a turn at all?
     const reservation = await gate.reserve(TURN_ESTIMATE_NEURONS);
     if (!reservation.ok) {
@@ -937,7 +971,8 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
     const lowPower = fractionLeft < LOW_POWER_THRESHOLD;
     const modelId = lowPower ? LOW_POWER_MODEL : CHAT_MODEL;
 
-    const system = await this.buildSystemPrompt(latestUserText(this.messages));
+    const userText = latestUserText(this.messages);
+    const system = await this.buildSystemPrompt(userText);
     // Section 12 routes chat through the AI Gateway too. A turn rarely
     // repeats byte for byte — the pantry slot changes as things are used up
     // — so this is not where the cache pays off. It matters for the demo
@@ -969,7 +1004,9 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
       // SDK does not enforce it. Leaving them out also drops ~2,800 tokens of
       // definitions from a step that cannot use them.
       prepareStep: ({ stepNumber, steps }) =>
-        mustAnswer(stepNumber, steps) ? { activeTools: [], toolChoice: 'none' as const } : {},
+        mustAnswer(stepNumber, steps, userText)
+          ? { activeTools: [], toolChoice: 'none' as const }
+          : {},
       onFinish: async (event) => {
         const usage: TokenUsage = {
           promptTokens: event.totalUsage?.inputTokens ?? 0,
@@ -989,6 +1026,8 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
             promptTokens: usage.promptTokens,
             completionTokens: usage.completionTokens,
             steps: event.steps?.length ?? 1,
+            tools: event.steps?.flatMap((step) => step.toolCalls.map((c) => c.toolName)) ?? [],
+            ms: Date.now() - startedAt,
             lowPower,
             continuation: options?.continuation ?? false,
           }),
@@ -1826,6 +1865,18 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
   }
 }
 
+/** Tools that change the pantry; their result is the whole answer. */
+const PANTRY_WRITES = new Set([
+  'add_pantry_items',
+  'remove_pantry_items',
+  'update_pantry_item',
+  'restore_pantry_items',
+]);
+
+/** The user asked for food, not just a pantry update. */
+const ASKS_FOR_FOOD =
+  /\b(make|cook|cooking|recipes?|suggest\w*|ideas?|dinner|lunch|breakfast|snack|eat|tonight|meals?|hungry|khana)\b/i;
+
 /**
  * Whether this step must answer in words rather than call a tool.
  *
@@ -1835,12 +1886,25 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
  * spending a demo account's day on one turn with no reply. Taking the tools
  * away after the first failure instead left Llama writing the call it wanted
  * to make as JSON in its reply.
+ *
+ * And a pantry update is answered, not built on. "bought 1kg paneer, 6 eggs"
+ * had Llama chain suggest_recipes after add_pantry_items, unasked — three
+ * minutes and most of a demo day spent on recipes nobody wanted. The prompt
+ * already said one tool per turn; this makes it so, unless the message also
+ * asked for food ("bought paneer, what can i make?").
  */
 export function mustAnswer(
   stepNumber: number,
-  steps: { content: { type: string }[] }[],
+  steps: { content: { type: string; toolName?: string }[] }[],
+  userText = '',
 ): boolean {
   if (stepNumber >= MAX_STEPS - 1) return true;
+  const updatedPantry = steps.some((step) =>
+    step.content.some(
+      (part) => part.type === 'tool-result' && PANTRY_WRITES.has(part.toolName ?? ''),
+    ),
+  );
+  if (updatedPantry && !ASKS_FOR_FOOD.test(userText)) return true;
   const failures = steps.reduce(
     (n, step) => n + step.content.filter((part) => part.type === 'tool-error').length,
     0,
