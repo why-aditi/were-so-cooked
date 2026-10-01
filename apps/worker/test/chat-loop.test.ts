@@ -267,9 +267,13 @@ describe('a turn always ends in words', () => {
     // invalid, and the model retried the identical call until the step limit
     // — the whole demo budget, and no reply at all.
     const choices: unknown[] = [];
+    const toolCounts: number[] = [];
     const messages = await withAgent(
       recordingModel(
-        (c) => choices.push(c.toolChoice),
+        (c) => {
+          choices.push(c.toolChoice);
+          toolCounts.push(Array.isArray(c.tools) ? c.tools.length : 0);
+        },
         calls('add_pantry_items', { wrong: 'shape' }),
         says('that did not work, sorry'),
       ),
@@ -281,14 +285,25 @@ describe('a turn always ends in words', () => {
 
     expect(choices).toHaveLength(2);
     expect(choices[1]).toEqual({ type: 'none' });
+    // Not just discouraged: the answering step is sent no tools at all, so a
+    // model that ignores tool_choice still cannot call one.
+    expect(toolCounts[0]).toBeGreaterThan(0);
+    expect(toolCounts[1]).toBe(0);
     expect(JSON.stringify(messages.at(-1))).toContain('that did not work, sorry');
   });
 
   it('takes the tools away on the last allowed step', async () => {
     const choices: unknown[] = [];
+    const toolCounts: number[] = [];
     await withAgent(
       // A model that would call a tool forever.
-      recordingModel((c) => choices.push(c.toolChoice), calls('list_pantry', {})),
+      recordingModel(
+        (c) => {
+          choices.push(c.toolChoice);
+          toolCounts.push(Array.isArray(c.tools) ? c.tools.length : 0);
+        },
+        calls('list_pantry', {}),
+      ),
       async (agent) => {
         await agent.saveMessages(userMessage('what do I have'));
       },
@@ -296,6 +311,7 @@ describe('a turn always ends in words', () => {
 
     expect(choices.length).toBeGreaterThan(1);
     expect(choices.at(-1)).toEqual({ type: 'none' });
+    expect(toolCounts.at(-1)).toBe(0);
     expect(choices.slice(0, -1).every((c) => !c || (c as { type: string }).type !== 'none')).toBe(true);
   });
 });

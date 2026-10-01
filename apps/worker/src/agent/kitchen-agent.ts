@@ -964,9 +964,16 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
       // tool, and neither may the step after a tool error: retrying the same
       // failing call is what spent a demo account's whole day on one turn in
       // production, ending with no reply at all.
+      //
+      // The tools are removed from the request, not just declined with
+      // `toolChoice: 'none'` — that is a hint the model can ignore, and the
+      // SDK does not enforce it. Leaving them out also drops ~2,800 tokens of
+      // definitions from a step that cannot use them.
       prepareStep: ({ stepNumber, steps }) => {
         const lastFailed = steps.at(-1)?.content.some((part) => part.type === 'tool-error') ?? false;
-        return stepNumber >= MAX_STEPS - 1 || lastFailed ? { toolChoice: 'none' as const } : {};
+        return stepNumber >= MAX_STEPS - 1 || lastFailed
+          ? { activeTools: [], toolChoice: 'none' as const }
+          : {};
       },
       onFinish: async (event) => {
         const usage: TokenUsage = {
