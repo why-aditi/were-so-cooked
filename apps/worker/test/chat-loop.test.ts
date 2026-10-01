@@ -38,6 +38,9 @@ async function withAgent<T>(
   });
 }
 
+const toolNames = (tools: unknown): string[] =>
+  Array.isArray(tools) ? tools.map((t) => String((t as { name?: string }).name)) : [];
+
 const userMessage = (text: string) => [
   { id: crypto.randomUUID(), role: 'user' as const, parts: [{ type: 'text' as const, text }] },
 ];
@@ -293,6 +296,45 @@ describe('a turn always ends in words', () => {
     expect(choices[2]).toEqual({ type: 'none' });
     expect(toolCounts[2]).toBe(0);
     expect(JSON.stringify(messages.at(-1))).toContain('that did not work, sorry');
+  });
+
+  it('answers a pantry update instead of going on to suggest recipes', async () => {
+    // Production: "bought 1kg paneer, 6 eggs" had Llama chain suggest_recipes
+    // after the pantry write, unasked, and the reply took three minutes.
+    const offered: string[][] = [];
+    await withAgent(
+      recordingModel(
+        (c) => offered.push(toolNames(c.tools)),
+        calls('add_pantry_items', { text: '1kg paneer, 6 eggs' }),
+        says('stocked 🧀'),
+      ),
+      async (agent) => {
+        await agent.saveMessages(userMessage('bought 1kg paneer, 6 eggs'));
+      },
+    );
+    expect(offered).toHaveLength(2);
+    expect(offered[0]).toContain('suggest_recipes');
+    expect(offered[1]).not.toContain('suggest_recipes');
+    expect(offered[1]).not.toContain('start_weekly_plan');
+    // Only the food tools go: a pantry edit that missed can still look the
+    // item up and retry, and a second pantry change still goes through.
+    expect(offered[1]).toContain('list_pantry');
+    expect(offered[1]).toContain('remove_pantry_items');
+  });
+
+  it('still suggests after a pantry update when the message asked for food', async () => {
+    const offered: string[][] = [];
+    await withAgent(
+      recordingModel(
+        (c) => offered.push(toolNames(c.tools)),
+        calls('add_pantry_items', { text: '1kg paneer' }),
+        says('stocked, now ideas'),
+      ),
+      async (agent) => {
+        await agent.saveMessages(userMessage('bought 1kg paneer, what can i make tonight?'));
+      },
+    );
+    expect(offered[1]).toContain('suggest_recipes');
   });
 
   it('accepts numbers sent as strings, the way Llama sends them', async () => {
