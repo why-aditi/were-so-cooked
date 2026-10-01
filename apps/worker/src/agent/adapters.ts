@@ -28,6 +28,8 @@ export interface ModelRequest {
   model: string;
   messages: { role: string; content: string }[];
   tools?: { name: string; description: string; parameters: unknown }[];
+  /** Workers AI defaults to 256, which cuts a recipe list off mid-JSON. */
+  maxTokens?: number;
 }
 
 export interface ModelResponse {
@@ -72,14 +74,24 @@ function gatewayOptions(env: Env): { gateway: { id: string } } | undefined {
 
 /* -------------------------------- Workers AI ------------------------------- */
 
-/** What `env.AI.run` actually returns for a chat model. */
-interface AiTextResult {
+interface RawToolCall {
+  name?: string;
+  arguments?: unknown;
+  function?: { name?: string; arguments?: unknown };
+}
+
+/**
+ * What `env.AI.run` actually returns for a chat model.
+ *
+ * Two envelopes: the older models (Llama) put the text in `response`; the
+ * chat-completions ones (Gemma 4) answer OpenAI-style in `choices`. Reading
+ * only `response` made every Gemma reply look empty, so recipe generation
+ * failed its parse, retried, failed again, and returned nothing — slowly.
+ */
+export interface AiTextResult {
   response?: string;
-  tool_calls?: {
-    name?: string;
-    arguments?: unknown;
-    function?: { name?: string; arguments?: unknown };
-  }[];
+  choices?: { message?: { content?: string | null; tool_calls?: RawToolCall[] } }[];
+  tool_calls?: RawToolCall[];
   usage?: { prompt_tokens?: number; completion_tokens?: number };
 }
 
@@ -91,7 +103,7 @@ interface AiTextResult {
  */
 function normaliseToolCalls(result: AiTextResult): { name: string; arguments: unknown }[] {
   const calls: { name: string; arguments: unknown }[] = [];
-  for (const raw of result.tool_calls ?? []) {
+  for (const raw of result.tool_calls ?? result.choices?.[0]?.message?.tool_calls ?? []) {
     const name = raw.name ?? raw.function?.name;
     if (!name) continue;
     const args = raw.arguments ?? raw.function?.arguments;
@@ -109,11 +121,31 @@ function normaliseToolCalls(result: AiTextResult): { name: string; arguments: un
   return calls;
 }
 
+/** The reply text, from whichever envelope the model used. */
+export function replyText(result: AiTextResult): string {
+  if (typeof result.response === 'string') return result.response;
+  return result.choices?.[0]?.message?.content ?? '';
+}
+
+/** Generous enough for a full recipe list; billing is by tokens used, not this. */
+const DEFAULT_MAX_TOKENS = 2048;
+
+/**
+ * Models that take chat-completions input, where reasoning is on by default.
+ * Every caller of this runner wants JSON back, not a think-aloud first: on
+ * Gemma 4 that preamble is most of the wait and all of the extra cost.
+ */
+const THINKS_BY_DEFAULT = /^@cf\/google\/gemma-4/;
+
 export function workersAiRunner(env: Env): ModelRunner {
   return async (req: ModelRequest): Promise<ModelResponse> => {
     const input: Record<string, unknown> = {
       messages: req.messages.map((m) => ({ role: m.role, content: m.content })),
+      max_tokens: req.maxTokens ?? DEFAULT_MAX_TOKENS,
     };
+    if (THINKS_BY_DEFAULT.test(req.model)) {
+      input.chat_template_kwargs = { enable_thinking: false };
+    }
     if (req.tools) {
       input.tools = req.tools.map((t) => ({
         type: 'function',
@@ -128,7 +160,7 @@ export function workersAiRunner(env: Env): ModelRunner {
     )) as AiTextResult;
 
     return {
-      text: result.response ?? '',
+      text: replyText(result),
       toolCalls: normaliseToolCalls(result),
       usage: {
         promptTokens: result.usage?.prompt_tokens ?? 0,
@@ -153,10 +185,10 @@ export function workersAiVision(env: Env): VisionRunner {
       req.model as Parameters<Ai['run']>[0],
       { prompt: req.prompt, image: req.image, max_tokens: 1024 } as never,
       gatewayOptions(env),
-    )) as { response?: string; usage?: { prompt_tokens?: number; completion_tokens?: number } };
+    )) as AiTextResult;
 
     return {
-      text: result.response ?? '',
+      text: replyText(result),
       usage: {
         promptTokens: result.usage?.prompt_tokens ?? 0,
         completionTokens: result.usage?.completion_tokens ?? 0,

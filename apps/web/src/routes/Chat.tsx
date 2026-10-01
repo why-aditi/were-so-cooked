@@ -105,7 +105,7 @@ export function Chat() {
   // streamed token — otherwise a long answer fights anyone scrolling back.
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: 'end' });
-  }, [messages.length]);
+  }, [messages.length, busy]);
 
   const onPhoto = async (file: File) => {
     setUploadError(null);
@@ -155,6 +155,8 @@ export function Chat() {
               />
             ))}
 
+            {busy ? <TypingBubble label={activityOf(messages)} /> : null}
+
             {Object.entries(scanItems).map(([scanId, items]) => (
               <ScanConfirmCard
                 key={scanId}
@@ -194,7 +196,6 @@ export function Chat() {
           onSend={(text) => sendMessage({ text })}
           onPhoto={onPhoto}
           disabled={false}
-          busy={busy}
         />
       </div>
     </PlanProgress.Provider>
@@ -240,6 +241,71 @@ function Message({
           <ToolCard key={part.toolCallId ?? index} part={part} onApprove={onApprove} />
         ))}
       </div>
+    </div>
+  );
+}
+
+/* ------------------------------ typing bubble ----------------------------- */
+
+/** What the agent is doing while a tool runs, in the app's own voice. */
+const TOOL_ACTIVITY: Record<string, string> = {
+  add_pantry_items: 'updating your fridge',
+  remove_pantry_items: 'updating your fridge',
+  update_pantry_item: 'updating your fridge',
+  restore_pantry_items: 'updating your fridge',
+  list_pantry: 'checking your fridge',
+  suggest_recipes: 'finding recipes',
+  search_trending: 'checking what is trending',
+  substitute: 'working out swaps',
+  log_cooked: 'logging that',
+  start_weekly_plan: 'starting your plan',
+  get_plan: 'pulling up your plan',
+  get_grocery_list: 'pulling up your list',
+  check_grocery_item: 'ticking that off',
+  remember_taste: 'noting that',
+  update_profile: 'updating your profile',
+};
+
+/**
+ * The bubble's label, or null for plain dots.
+ *
+ * A running tool names itself; anything else — the model reading the
+ * message, or writing after a tool — is just the dots. Once the reply's
+ * words start arriving the bubble has nothing left to say, so it goes.
+ */
+function activityOf(messages: UIMessage[]): string | null | false {
+  const last = messages.at(-1);
+  if (!last || last.role !== 'assistant') return null;
+  const tail = last.parts.at(-1);
+  if (tail?.type === 'text') return (tail as { text: string }).text.trim() ? false : null;
+  if (tail && isToolPart(tail) && (tail.state === 'input-streaming' || tail.state === 'input-available')) {
+    return TOOL_ACTIVITY[toolNameOf(tail)] ?? null;
+  }
+  return null;
+}
+
+/** Three bouncing dots in an agent-side bubble, with an optional label. */
+function TypingBubble({ label }: { label: string | null | false }) {
+  if (label === false) return null;
+  return (
+    <div className="my-2" role="status" aria-live="polite">
+      <span
+        className="inline-flex items-center gap-2.5 rounded-2xl rounded-bl-sm px-3.5 py-2.5"
+        style={{ background: 'var(--surface-high)', border: '2px solid var(--line)' }}
+      >
+        <span className="typing-dots" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </span>
+        {label ? (
+          <span className="text-[0.85rem]" style={{ color: 'var(--text-muted)' }}>
+            {label}…
+          </span>
+        ) : (
+          <span className="sr-only">typing</span>
+        )}
+      </span>
     </div>
   );
 }
