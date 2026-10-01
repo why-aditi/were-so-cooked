@@ -987,11 +987,12 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
         ...(this.env.AI_GATEWAY_ID ? { gateway: { id: this.env.AI_GATEWAY_ID } } : {}),
       })(modelId as never);
 
+    const tools = buildTools(this);
     const result = streamText({
       model,
       system,
       messages: await convertToModelMessages(this.messages),
-      tools: buildTools(this),
+      tools,
       // The SDK runs tools and loops back for the answer. Bounded so a model
       // that keeps reaching for tools cannot spin through the budget.
       stopWhen: stepCountIs(MAX_STEPS),
@@ -1003,10 +1004,16 @@ export class KitchenAgent extends AIChatAgent<Env> implements PantryOps {
       // `toolChoice: 'none'` — that is a hint the model can ignore, and the
       // SDK does not enforce it. Leaving them out also drops ~2,800 tokens of
       // definitions from a step that cannot use them.
-      prepareStep: ({ stepNumber, steps }) =>
-        mustAnswer(stepNumber, steps, userText)
-          ? { activeTools: [], toolChoice: 'none' as const }
-          : {},
+      prepareStep: ({ stepNumber, steps }) => {
+        if (mustAnswer(stepNumber, steps)) return { activeTools: [], toolChoice: 'none' as const };
+        const held = unaskedFoodTools(steps, userText);
+        if (held.length === 0) return {};
+        return {
+          activeTools: (Object.keys(tools) as (keyof typeof tools)[]).filter(
+            (name) => !held.includes(name),
+          ),
+        };
+      },
       onFinish: async (event) => {
         const usage: TokenUsage = {
           promptTokens: event.totalUsage?.inputTokens ?? 0,
@@ -1886,30 +1893,42 @@ const ASKS_FOR_FOOD =
  * spending a demo account's day on one turn with no reply. Taking the tools
  * away after the first failure instead left Llama writing the call it wanted
  * to make as JSON in its reply.
- *
- * And a pantry update is answered, not built on. "bought 1kg paneer, 6 eggs"
- * had Llama chain suggest_recipes after add_pantry_items, unasked — three
- * minutes and most of a demo day spent on recipes nobody wanted. The prompt
- * already said one tool per turn; this makes it so, unless the message also
- * asked for food ("bought paneer, what can i make?").
  */
 export function mustAnswer(
   stepNumber: number,
-  steps: { content: { type: string; toolName?: string }[] }[],
-  userText = '',
+  steps: { content: { type: string }[] }[],
 ): boolean {
   if (stepNumber >= MAX_STEPS - 1) return true;
-  const updatedPantry = steps.some((step) =>
-    step.content.some(
-      (part) => part.type === 'tool-result' && PANTRY_WRITES.has(part.toolName ?? ''),
-    ),
-  );
-  if (updatedPantry && !ASKS_FOR_FOOD.test(userText)) return true;
   const failures = steps.reduce(
     (n, step) => n + step.content.filter((part) => part.type === 'tool-error').length,
     0,
   );
   return failures >= 2;
+}
+
+/** Tools that go looking for food: slow, paid, and only wanted when asked. */
+const FOOD_TOOLS = ['suggest_recipes', 'search_trending', 'substitute', 'start_weekly_plan'];
+
+/**
+ * The food tools to hold back from this step, if any.
+ *
+ * "bought 1kg paneer, 6 eggs" had Llama chain suggest_recipes after
+ * add_pantry_items, unasked: three minutes and a good part of a demo day on
+ * recipes nobody wanted. So after a pantry write, the food tools go — unless
+ * the message asked for food too ("bought paneer, what can i make?"). The
+ * rest stay: a failed edit can still look the item up and retry, and "add
+ * rice and remove the old milk" still gets both halves.
+ */
+export function unaskedFoodTools(
+  steps: { content: { type: string; toolName?: string }[] }[],
+  userText: string,
+): string[] {
+  const updatedPantry = steps.some((step) =>
+    step.content.some(
+      (part) => part.type === 'tool-result' && PANTRY_WRITES.has(part.toolName ?? ''),
+    ),
+  );
+  return updatedPantry && !ASKS_FOR_FOOD.test(userText) ? FOOD_TOOLS : [];
 }
 
 /** Creates the tables and the single profile row. Safe to run repeatedly. */

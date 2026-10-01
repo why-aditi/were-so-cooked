@@ -38,6 +38,9 @@ async function withAgent<T>(
   });
 }
 
+const toolNames = (tools: unknown): string[] =>
+  Array.isArray(tools) ? tools.map((t) => String((t as { name?: string }).name)) : [];
+
 const userMessage = (text: string) => [
   { id: crypto.randomUUID(), role: 'user' as const, parts: [{ type: 'text' as const, text }] },
 ];
@@ -298,10 +301,10 @@ describe('a turn always ends in words', () => {
   it('answers a pantry update instead of going on to suggest recipes', async () => {
     // Production: "bought 1kg paneer, 6 eggs" had Llama chain suggest_recipes
     // after the pantry write, unasked, and the reply took three minutes.
-    const toolCounts: number[] = [];
+    const offered: string[][] = [];
     await withAgent(
       recordingModel(
-        (c) => toolCounts.push(Array.isArray(c.tools) ? c.tools.length : 0),
+        (c) => offered.push(toolNames(c.tools)),
         calls('add_pantry_items', { text: '1kg paneer, 6 eggs' }),
         says('stocked 🧀'),
       ),
@@ -309,16 +312,21 @@ describe('a turn always ends in words', () => {
         await agent.saveMessages(userMessage('bought 1kg paneer, 6 eggs'));
       },
     );
-    expect(toolCounts).toHaveLength(2);
-    expect(toolCounts[0]).toBeGreaterThan(0);
-    expect(toolCounts[1]).toBe(0);
+    expect(offered).toHaveLength(2);
+    expect(offered[0]).toContain('suggest_recipes');
+    expect(offered[1]).not.toContain('suggest_recipes');
+    expect(offered[1]).not.toContain('start_weekly_plan');
+    // Only the food tools go: a pantry edit that missed can still look the
+    // item up and retry, and a second pantry change still goes through.
+    expect(offered[1]).toContain('list_pantry');
+    expect(offered[1]).toContain('remove_pantry_items');
   });
 
   it('still suggests after a pantry update when the message asked for food', async () => {
-    const toolCounts: number[] = [];
+    const offered: string[][] = [];
     await withAgent(
       recordingModel(
-        (c) => toolCounts.push(Array.isArray(c.tools) ? c.tools.length : 0),
+        (c) => offered.push(toolNames(c.tools)),
         calls('add_pantry_items', { text: '1kg paneer' }),
         says('stocked, now ideas'),
       ),
@@ -326,7 +334,7 @@ describe('a turn always ends in words', () => {
         await agent.saveMessages(userMessage('bought 1kg paneer, what can i make tonight?'));
       },
     );
-    expect(toolCounts[1]).toBeGreaterThan(0);
+    expect(offered[1]).toContain('suggest_recipes');
   });
 
   it('accepts numbers sent as strings, the way Llama sends them', async () => {
